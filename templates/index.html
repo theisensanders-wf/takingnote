@@ -16,32 +16,38 @@
     <link href="../static/css/bootstrap-switch.css" rel="stylesheet">
 
     <style>
-        body {
-            background-color: rgb(41, 41, 41);
-        }
+            /*body {*/
+            /*background-color: rgb(41, 41, 41);*/
+            /*}*/
 
-        .panel-group {
-            position: absolute;
+            /*.toolbox {*/
+            /*position: relative;*/
+            /*margin-top: 100%;*/
+            /*height: 100%;*/
+            /*}*/
+
+        .toolbox .panel-group {
+            position: fixed;
             right: 0;
             bottom: 0;
             width: auto;
             min-width: 200px;
         }
 
-        .panel-title {
+        .toolbox .panel-title {
             text-align: center;
         }
 
-        .panel-body {
+        .toolbox .panel-body {
             padding: 0;
             border-radius: 0;
         }
 
-        .list-group {
+        .toolbox .list-group {
             margin: 0;
         }
 
-        .list-group-item {
+        .toolbox .list-group-item {
             cursor: pointer;
         }
 
@@ -51,52 +57,71 @@
 </head>
 <body ng-controller="NoteController">
 
-<div class="panel-group" id="accordion">
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#files">
-          <i class="icon-file"></i> Files
-        </a>
-      </h4>
-    </div>
-    <div id="files" class="panel-collapse collapse in">
-      <div class="panel-body">
-        <ul class="list-group">
-         <li class="list-group-item" ng-click="closeNote()">Create a new note</li>
-         <li class="list-group-item" ng-repeat="note in notes" ng-click="openNote(note.getId())">
-             <span ng-bind="getCreated(note)"></span>
-             <span class="text-muted" ng-bind="getContentShort(note)"></span>
-             <button type="button" class="close" ng-click="removeNote(note)">&times;</button>
-         </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h4 class="panel-title">
-        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#settings">
-          <i class="icon-cog"></i> Settings
-        </a>
-      </h4>
-    </div>
-    <div id="settings" class="panel-collapse collapse">
-      <div class="panel-body">
-        <ul class="list-group">
-         <li class="list-group-item">Dark Theme
-             <div class="make-switch switch-small">
-                <input type="checkbox" ng-model="settings.darkTheme" ng-click="toggleTheme()">
+<div class="toolbox">
+    <div class="panel-group" id="accordion">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
+                       href="#files">
+                        <i class="icon-file"></i> Files
+                    </a>
+                </h4>
             </div>
-         </li>
+            <div id="files" class="panel-collapse collapse in">
+                <div class="panel-body">
+                    <ul class="list-group">
+                        <li class="list-group-item" ng-click="closeNote()">Create a new note</li>
+                        <li class="list-group-item" ng-repeat="note in notes"
+                            ng-click="openNote(note.getId())">
+                            <span ng-bind="getCreated(note)"></span>
+                            <span class="text-muted" ng-bind="getContentShort(note)"></span>
+                            <button type="button" class="close"
+                                    ng-click="removeNote(note)">&times;</button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
+                       href="#settings">
+                        <i class="icon-cog"></i> Settings
+                    </a>
+                </h4>
+            </div>
+            <div id="settings" class="panel-collapse collapse">
+                <div class="panel-body">
+                    <ul class="list-group">
+                        <li class="list-group-item" style="border-bottom: 2px solid red">Dark Theme
+                            <small>(reload)</small>
+                            <!--<div class="make-switch switch-small">-->
+                            <input type="checkbox" ng-model="settings.darkTheme"
+                                   ng-click="toggleTheme()">
+                            <!--</div>-->
+                        </li>
+                        <li class="text-center">&darr; Not implemented &darr;</li>
+                        <li class="list-group-item">
+                            Editor Font Size <input style="width:50px" value="20" type="number">
+                        </li>
+                        <li class="list-group-item text-center">
+                                <button class="btn">Download</button>
+                                <button class="btn">Print</button>
+                        </li>
+                        <li class="list-group-item text-center">
+                            <button class="btn">Upload Custom CSS</button>
+                        </li>
 
-        </ul>
-      </div>
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
-<div id="epic-editor"></div>
+<div id="epic-editor" style="height: 100%;"></div>
 
 
 <script src="../static/js/jquery.js"></script>

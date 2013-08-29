@@ -19,8 +19,6 @@ function NoteController($scope, dropstoreClient) {
     var initializeEditor = function () {
         $scope.settings.darkTheme = getSetting('darkTheme').get('value');
         var theme = $scope.settings.darkTheme ? '/epic-dark.css' : '/epic-light.css';
-        console.log($scope.settings.darkTheme);
-        console.log(theme);
 
         var epicOptions = {
             container: 'epic-editor',
@@ -32,11 +30,18 @@ function NoteController($scope, dropstoreClient) {
                 editor: $scope.settings.darkTheme ? '/epic-dark.css' : '/epic-light.css'
             },
             file: {
-                autoSave: 1000
+                autoSave: 500
+//                defaultContent: 'Start Typing'
             },
             focusOnLoad: true,
-            autogrow: true
+            autogrow: {
+                minHeight: $(window).height()
+            }
         };
+
+        // Set background color
+        var background_color = $scope.settings.darkTheme ? 'rgb(41, 41, 41)' : '#fff';
+        $('body').css('background-color', background_color);
 
         editor = new EpicEditor(epicOptions);
 

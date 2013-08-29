@@ -5,7 +5,7 @@ html, body, iframe, div {
 
 #epiceditor-utilbar {
   position:fixed;
-  bottom:10px;
+  top:10px;
   right:10px;
 }
 
