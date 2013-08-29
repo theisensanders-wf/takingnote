@@ -232,9 +232,8 @@ function NoteController($scope, dropstoreClient) {
     // Initialize App
     //=========================================================================
     var init = function () {
-        initializeEditor();
-
         initializeSettings();
+        initializeEditor();
     };
 
     //=========================================================================
