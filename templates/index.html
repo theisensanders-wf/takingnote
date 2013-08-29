@@ -1,0 +1,118 @@
+{% raw %}
+<!DOCTYPE html>
+<html lang="en" ng-app="myApp">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="shortcut icon" href="../../assets/ico/favicon.png"> -->
+
+    <title>NoteTaker</title>
+
+    <link href="../static/css/bootstrap.css" rel="stylesheet">
+    <link href="../static/css/epiceditor.css" rel="stylesheet">
+    <link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+    <link href="../static/css/bootstrap-switch.css" rel="stylesheet">
+
+    <style>
+        body {
+            background-color: rgb(41, 41, 41);
+        }
+
+        .panel-group {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: auto;
+            min-width: 200px;
+        }
+
+        .panel-title {
+            text-align: center;
+        }
+
+        .panel-body {
+            padding: 0;
+            border-radius: 0;
+        }
+
+        .list-group {
+            margin: 0;
+        }
+
+        .list-group-item {
+            cursor: pointer;
+        }
+
+
+    </style>
+
+</head>
+<body ng-controller="NoteController">
+
+<div class="panel-group" id="accordion">
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#files">
+          <i class="icon-file"></i> Files
+        </a>
+      </h4>
+    </div>
+    <div id="files" class="panel-collapse collapse in">
+      <div class="panel-body">
+        <ul class="list-group">
+         <li class="list-group-item" ng-click="closeNote()">Create a new note</li>
+         <li class="list-group-item" ng-repeat="note in notes" ng-click="openNote(note.getId())">
+             <span ng-bind="getCreated(note)"></span>
+             <span class="text-muted" ng-bind="getContentShort(note)"></span>
+             <button type="button" class="close" ng-click="removeNote(note)">&times;</button>
+         </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="panel panel-default">
+    <div class="panel-heading">
+      <h4 class="panel-title">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion" href="#settings">
+          <i class="icon-cog"></i> Settings
+        </a>
+      </h4>
+    </div>
+    <div id="settings" class="panel-collapse collapse">
+      <div class="panel-body">
+        <ul class="list-group">
+         <li class="list-group-item">Dark Theme
+             <div class="make-switch switch-small">
+                <input type="checkbox" ng-model="settings.darkTheme" ng-click="toggleTheme()">
+            </div>
+         </li>
+
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="epic-editor"></div>
+
+
+<script src="../static/js/jquery.js"></script>
+<script src="../static/js/bootstrap.js"></script>
+<script src="../static/js/dropbox-datastores-0.1.0-b3.js"></script>
+<script src="../static/js/epiceditor.js"></script>
+<script src="../static/js/bootstrap-switch.min.js"></script>
+
+<script src="../static/js/angular.min.js"></script>
+<script src="../static/js/dropstore-ng.js"></script>
+<script src="../static/js/app.js" type="text/javascript"></script>
+<script src="../static/js/controllers.js" type="text/javascript"></script>
+<script src="../static/js/services.js" type="text/javascript"></script>
+<script src="../static/js/directives.js" type="text/javascript"></script>
+
+
+</body>
+</html>
+{% endraw %}
