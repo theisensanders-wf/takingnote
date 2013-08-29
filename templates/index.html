@@ -95,14 +95,19 @@
             <div id="settings" class="panel-collapse collapse">
                 <div class="panel-body">
                     <ul class="list-group">
-                        <li class="list-group-item" style="border-bottom: 2px solid red">Dark Theme
+                        <li class="list-group-item">Dark Theme
                             <small>(reload)</small>
                             <!--<div class="make-switch switch-small">-->
                             <input type="checkbox" ng-model="settings.darkTheme"
                                    ng-click="toggleTheme()">
                             <!--</div>-->
                         </li>
-                        <li class="text-center">&darr; Not implemented &darr;</li>
+                        <li class="list-group-item text-center" style="border-top: 1px solid red;">&darr; Not implemented &darr;</li>
+                        <li class="list-group-item">Autosave
+                            <div class="make-switch switch">
+                                <input type="checkbox" checked>
+                            </div>
+                        </li>
                         <li class="list-group-item">
                             Editor Font Size <input style="width:50px" value="20" type="number">
                         </li>
