@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <!-- <link rel="shortcut icon" href="../../assets/ico/favicon.png"> -->
 
-    <title>NoteTaker</title>
+    <title>Note.it</title>
 
     <link href="../static/css/bootstrap.css" rel="stylesheet">
     <link href="../static/css/epiceditor.css" rel="stylesheet">
@@ -26,7 +26,7 @@
             /*height: 100%;*/
             /*}*/
 
-        .toolbox .panel-group {
+        .toolbox .tools {
             position: fixed;
             right: 0;
             bottom: 0;
@@ -36,6 +36,11 @@
 
         .toolbox .panel-title {
             text-align: center;
+            font-size: 20px;
+        }
+
+        .toolbox .folders .panel-title {
+            font-size: 14px;
         }
 
         .toolbox .panel-body {
@@ -58,68 +63,130 @@
 <body ng-controller="NoteController">
 
 <div class="toolbox">
-    <div class="panel-group" id="accordion">
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
-                       href="#files">
-                        <i class="icon-file"></i> Files
-                    </a>
-                </h4>
-            </div>
-            <div id="files" class="panel-collapse collapse in">
-                <div class="panel-body">
-                    <ul class="list-group">
-                        <li class="list-group-item" ng-click="closeNote()">Create a new note</li>
-                        <li class="list-group-item" ng-repeat="note in notes"
-                            ng-click="openNote(note.getId())">
-                            <span ng-bind="getCreated(note)"></span>
-                            <span class="text-muted" ng-bind="getContentShort(note)"></span>
-                            <button type="button" class="close"
-                                    ng-click="removeNote(note)">&times;</button>
-                        </li>
-                    </ul>
+    <div class="tools">
+
+
+        <div class="panel-group" id="folderCollapse">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse"
+                           data-parent="#folderCollapse"
+                           href="#folders">
+                            <i class="icon-file"></i> Notes
+                        </a>
+                    </h4>
+                </div>
+                <div id="folders" class="panel-collapse collapse">
+                    <div class="panel-body">
+
+                        <!--List of folder accordians-->
+                        <div class="panel-heading" ng-click="createFolder()">
+                            <h4 class="panel-title">Create new folder</h4>
+                        </div>
+                        <div class="panel-group folders" id="folder-{{ folder.getId() }}"
+                             ng-repeat="folder in folders">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <h4 class="panel-title">
+                                        <a class="accordion-toggle" data-toggle="collapse"
+                                           data-parent="#folder-{{ folder.getId() }}"
+                                           href="#folder-{{ folder.getId() }}-files">
+                                            <i class="icon-folder-open"></i>
+                                            <span ng-bind="folder.get('name')"></span>
+                                        </a>
+                                        <button type="button" class="close"
+                                                ng-click="deleteFolder(folder)">&times;</button>
+                                    </h4>
+                                </div>
+                                <div id="folder-{{ folder.getId() }}-files"
+                                     class="panel-collapse collapse">
+                                    <div class="panel-body">
+                                        <ul class="list-group">
+
+                                            <!--List of files in folders-->
+                                            <li class="list-group-item files"
+                                                ng-repeat="note in notes"
+                                                ng-click="openNote(note.getId())">
+                                                <span ng-bind="getCreated(note)"></span>
+                                                <span class="text-muted"
+                                                      ng-bind="getContentShort(note)"></span>
+                                                <button type="button" class="close"
+                                                        ng-click="removeNote(note)">&times;</button>
+                                            </li>
+
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!--Files without folders-->
+                        <ul class="list-group">
+                            <!--List of files in folders-->
+                            <li class="list-group-item files"
+                                ng-repeat="note in notes"
+                                ng-click="openNote(note.getId())">
+                                <span ng-bind="getCreated(note)"></span>
+                                <span class="text-muted"
+                                      ng-bind="getContentShort(note)"></span>
+                                <button type="button" class="close"
+                                        ng-click="removeNote(note)">&times;</button>
+                            </li>
+
+                        </ul>
+
+                        <!--<li class="list-group-item" ng-click="closeNote()">Create a new note</li>-->
+                        <!--<li class="list-group-item" ng-repeat="note in notes"-->
+                        <!--ng-click="openNote(note.getId())">-->
+                        <!--<span ng-bind="getCreated(note)"></span>-->
+                        <!--<span class="text-muted" ng-bind="getContentShort(note)"></span>-->
+                        <!--<button type="button" class="close"-->
+                        <!--ng-click="removeNote(note)">&times;</button>-->
+                        <!--</li>-->
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4 class="panel-title">
-                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
-                       href="#settings">
-                        <i class="icon-cog"></i> Settings
-                    </a>
-                </h4>
-            </div>
-            <div id="settings" class="panel-collapse collapse">
-                <div class="panel-body">
-                    <ul class="list-group">
-                        <li class="list-group-item">Dark Theme
-                            <small>(reload)</small>
-                            <!--<div class="make-switch switch-small">-->
-                            <input type="checkbox" ng-model="settings.darkTheme"
-                                   ng-click="toggleTheme()">
-                            <!--</div>-->
-                        </li>
-                        <li class="list-group-item text-center" style="border-top: 1px solid red;">&darr; Not implemented &darr;</li>
-                        <li class="list-group-item">Autosave
-                            <div class="make-switch switch">
-                                <input type="checkbox" checked>
-                            </div>
-                        </li>
-                        <li class="list-group-item">
-                            Editor Font Size <input style="width:50px" value="20" type="number">
-                        </li>
-                        <li class="list-group-item text-center">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">
+                        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion"
+                           href="#settings">
+                            <i class="icon-cog"></i> Settings
+                        </a>
+                    </h4>
+                </div>
+                <div id="settings" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <ul class="list-group">
+                            <li class="list-group-item">Dark Theme
+                                <small>(reload)</small>
+                                <!--<div class="make-switch switch-small">-->
+                                <input type="checkbox" ng-model="settings.darkTheme"
+                                       ng-click="toggleTheme()">
+                                <!--</div>-->
+                            </li>
+                            <li class="list-group-item text-center"
+                                style="border-top: 1px solid red;">&darr; Not
+                                implemented &darr;</li>
+                            <li class="list-group-item">Autosave
+                                <div class="make-switch switch">
+                                    <input type="checkbox" checked>
+                                </div>
+                            </li>
+                            <li class="list-group-item">
+                                Editor Font Size <input style="width:50px" value="20" type="number">
+                            </li>
+                            <li class="list-group-item text-center">
                                 <button class="btn">Download</button>
                                 <button class="btn">Print</button>
-                        </li>
-                        <li class="list-group-item text-center">
-                            <button class="btn">Upload Custom CSS</button>
-                        </li>
+                            </li>
+                            <li class="list-group-item text-center">
+                                <button class="btn">Upload Custom CSS</button>
+                            </li>
 
-                    </ul>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
