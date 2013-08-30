@@ -312,6 +312,9 @@ function NoteController($scope) {
 
     var reloadNotes = function () {
         $scope.notes = noteTable.query();
+        if (currentFile != null) {
+            openNote(currentFile);
+        }
     };
 
     var openNote = function (id) {
@@ -472,6 +475,12 @@ function NoteController($scope) {
         noteTable = $scope.datastore.getTable('notes');
         folderTable = $scope.datastore.getTable('folders');
         settingsTable = $scope.datastore.getTable('settings');
+
+        var ptr = $scope.datastore.SubscribeRecordsChanged(function(records){
+            reloadNotes();
+            reloadFolders();
+            initializeSettings();
+        });
 
         reloadNotes();
         reloadFolders();
