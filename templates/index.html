@@ -52,6 +52,7 @@
         }
 
         .toolbox .list-group-item {
+            text-align: right;
             cursor: pointer;
         }
 
@@ -120,7 +121,7 @@
                                 </div>
                                 <div id="folder-{{ folder.getId() }}-files"
                                      class="panel-collapse collapse">
-                                    <div class="panel-body" style="padding: 8px;">
+                                    <div class="panel-body" style="padding: 7px;">
                                         <ul class="list-group">
 
                                             <!--List of files in folders-->
@@ -169,27 +170,13 @@
                         <div class="panel-body">
                             <ul class="list-group">
                                 <li class="list-group-item">Dark Theme
-                                    <small>(reload)</small>
-                                    <!--<div class="make-switch switch-small">-->
-                                    <input type="checkbox" ng-model="settings.darkTheme">
-                                    <!--</div>-->
+                                    <div ng-model="settings.darkTheme" switch></div>
                                 </li>
-                                <li class="list-group-item text-center"
-                                    style="border-top: 1px solid red;">&darr; Not
-                                    implemented &darr;</li>
                                 <li class="list-group-item">Autosave
-                                    <div class="make-switch switch">
-                                        <input type="checkbox" checked>
-                                    </div>
+                                    <div ng-model="settings.autoSave" switch></div>
                                 </li>
-                                <li class="list-group-item">
-                                    Editor Font Size <input style="width:50px"
-                                                            ng-model="settings.fontSize"
-                                                            type="number">
-                                </li>
-                                <li class="list-group-item text-center">
-                                    <button class="btn">Download</button>
-                                    <button class="btn">Print</button>
+                                <li class="list-group-item">Font Size
+                                    <input style="width:50px" ng-model="settings.fontSize" type="number">
                                 </li>
                                 <li class="list-group-item text-center">
                                     <div class="btn btn-primary btn-file">
@@ -203,7 +190,10 @@
                                         <file-uploader></file-uploader>
                                     </div>
                                 </li>
-
+                                <li class="list-group-item text-center">
+                                    <button class="btn">Download</button>
+                                    <button class="btn">Print</button>
+                                </li>
                             </ul>
                         </div>
                     </div>
