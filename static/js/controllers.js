@@ -1,6 +1,6 @@
-var APP_KEY = '3r8ynvj5hvg8hqr';
+var APP_KEY = 'owmans4v3jkpi5x';
 
-function NoteController($scope, dropstoreClient) {
+function NoteController($scope) {
     $scope.folders = {};
     $scope.notes = [];
 
@@ -8,12 +8,13 @@ function NoteController($scope, dropstoreClient) {
     var noteTable = null;
     var settingsTable = null;
 
+    var recentlyModifiedFolder = '';
     var currentFile = null;
     var editor = null;
 
     var settings = {
         darkTheme: true,
-        fontSize: 20,
+        fontSize: 15,
         autoSave: true
     };
     $scope.settings = settings;
@@ -37,7 +38,6 @@ function NoteController($scope, dropstoreClient) {
             },
             file: {
                 autoSave: 500
-//                defaultContent: 'Start Typing'
             },
             focusOnLoad: true,
             autogrow: {
@@ -50,11 +50,10 @@ function NoteController($scope, dropstoreClient) {
         $('body').css('background-color', background_color);
 
         editor = new EpicEditor(epicOptions);
-
-        initializeListeners();
-
         editor.load();
         editor.focus();
+
+        initializeListeners();
     };
 
 
@@ -62,11 +61,27 @@ function NoteController($scope, dropstoreClient) {
     // Editor Listeners
     //=========================================================================
     var initializeListeners = function () {
-        editor.on('autosave', function () {
+        var save = function () {
             $scope.saveNote();
             $scope.$apply();
+        };
+
+        editor.on('autosave', save);
+//        editor.on('save', save);  Breaking for some reason that has to do with $apply
+
+        $scope.$watch('settings.darkTheme', function (newValue) {
+            getSettingByName('darkTheme').set('value', newValue);
+        });
+
+        $scope.$watch('settings.fontSize', function (newValue) {
+            getSettingByName('fontSize').set('value', newValue);
+        });
+
+        $scope.$watch('settings.autoSave', function (newValue) {
+            getSettingByName('autoSave').set('value', newValue);
         });
     };
+
 
     //=========================================================================
     // Folders API
@@ -98,7 +113,14 @@ function NoteController($scope, dropstoreClient) {
             notes: [],
             name: name
         };
-        return folderTable.insert(fieldValues);
+
+        // Create folder
+        var folder = folderTable.insert(fieldValues);
+
+        // Add as recently modified folder
+        recentlyModifiedFolder = folder.getId();
+
+        return folder;
     };
 
     var deleteFolder = function (id, include_files) {
@@ -109,12 +131,20 @@ function NoteController($scope, dropstoreClient) {
 
         var folder = getFolder(id);
 
-        // If include_files, delete the notes in the folder
-        if (include_files) {
-            var notes = getNotes({folder: id});
-            for (var i = 0; i < notes.length; i++) {
-                notes[i].deleteRecord();
+        var notes = getNotes({folder: id});
+        for (var i = 0; i < notes.length; i++) {
+            var note = notes[i];
+            if (include_files) {
+                // If include_files, delete the notes in the folder
+                note.deleteRecord();
+            } else {
+                note.set('folder', '')
             }
+        }
+
+        // Remove from recentlyModifiedFile if necessary
+        if (folder.getId() == recentlyModifiedFolder) {
+            recentlyModifiedFolder = '';
         }
 
         // Delete folder
@@ -129,6 +159,10 @@ function NoteController($scope, dropstoreClient) {
         var folder = getFolder(id);
         props = typeof props !== 'undefined' ? props : {};
         props['modified'] = new Date();
+
+        // Add as recently modified folder
+        recentlyModifiedFolder = id;
+
         return folder.update(props)
     };
 
@@ -147,13 +181,13 @@ function NoteController($scope, dropstoreClient) {
     };
 
     var addNoteToFolder = function (folder, noteID) {
-        var notes = folder.get('notes').append(noteID);
-        folder.set('notes', notes);
+        folder.get('notes').push(noteID)
     };
 
     var removeNoteFromFolder = function (folder, noteId) {
-        var notes = removeFromArray(folder.get('notes'), noteId);
-        folder.set('notes', notes);
+        var notes = folder.get('notes');
+        var index = notes.toArray().indexOf(noteId);
+        notes.splice(index, 1);
     };
 
     var reloadFolders = function () {
@@ -192,7 +226,7 @@ function NoteController($scope, dropstoreClient) {
 
         // Default parameters
         content = typeof content !== 'undefined' ? content : '';
-        folderId = typeof folderId !== 'undefined' ? folderId : '';
+        folderId = typeof folderId !== 'undefined' ? folderId : recentlyModifiedFolder;
         fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {
             created: date,
             modified: date,
@@ -206,6 +240,7 @@ function NoteController($scope, dropstoreClient) {
         // If folder specified, insert into folder
         if (folderId.length > 0) {
             var folder = getFolder(folderId);
+            console.log(folder);
             addNoteToFolder(folder, note.getId())
         }
 
@@ -326,11 +361,6 @@ function NoteController($scope, dropstoreClient) {
     };
     $scope.saveNote = saveNote;
 
-    var orphanedNote = function(note) {
-        var folderId = note.get('folder');
-        return folderId != null && folderId.length > 0;
-    };
-
 
     //=========================================================================
     // Settings API
@@ -385,13 +415,18 @@ function NoteController($scope, dropstoreClient) {
 
     var initializeSettings = function () {
         // Initialize the settings in the datastore
+//        var db_settings = getSettings();
+//        for (var i = 0; i < db_settings.length; i++) {
+//            db_settings[i].deleteRecord();
+//        }
+
         for (var settingName in settings) {
             var value = settings[settingName];
 
             // Check if in current settings, if not add it
             var setting = getSettingByName(settingName);
             if (setting === undefined) {
-                createSetting(name, value)
+                createSetting(settingName, value)
             } else {
                 settings[setting.get('name')] = setting.get('value');
             }
@@ -402,11 +437,6 @@ function NoteController($scope, dropstoreClient) {
     //=========================================================================
     // General helper methods
     //=========================================================================
-    var removeFromArray = function (array, item) {
-        var index = array.indexOf(item);
-        array.splice(index, 1);
-    };
-
     $scope.getContentShort = function (note) {
         return note.get('content').substr(0, 10);
     };
@@ -416,11 +446,22 @@ function NoteController($scope, dropstoreClient) {
     };
 
     var syncData = function () {
-       var folders = getFolders();
-       for (var i = 0; i < folders.length; i++) {
-           var folder = folders[i];
-           $scope.folders[folder] = getNotes({folder: folder.getId()});
-       }
+        var folders = getFolders();
+        for (var i = 0; i < folders.length; i++) {
+            var folder = folders[i];
+            $scope.folders[folder] = getNotes({folder: folder.getId()});
+        }
+    };
+
+    var clearData = function () {
+        var items = getSettings().concat(getFolders()).concat(getNotes());
+        console.log(items);
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            if (!item.isDeleted()) {
+                item.deleteRecord();
+            }
+        }
     };
 
 
@@ -428,29 +469,29 @@ function NoteController($scope, dropstoreClient) {
     // Initialize App
     //=========================================================================
     var init = function () {
+        noteTable = $scope.datastore.getTable('notes');
+        folderTable = $scope.datastore.getTable('folders');
+        settingsTable = $scope.datastore.getTable('settings');
+
+        reloadNotes();
+        reloadFolders();
+
+//        clearData();
+
         initializeSettings();
         initializeEditor();
     };
 
+    $scope.$on('authenticated', function () {
+        init();
+    });
 
-    //=========================================================================
-    // Dropbox Authentication
-    //=========================================================================
-    dropstoreClient.create({key: APP_KEY})
-        .authenticate({interactive: true})
-        .then(function (datastoreManager) {
-            return datastoreManager.openDefaultDatastore();
-        })
-        .then(function (datastore) {
-            noteTable = datastore.getTable('notes');
-            folderTable = datastore.getTable('folders');
-            settingsTable = datastore.getTable('settings');
-
-            reloadNotes();
-            reloadFolders();
-            init();
-            return datastore;
-        });
-
+    $scope.$on('New Image', function (event, url) {
+        console.log(url);
+        var content = getContent();
+        content += '![](' + url + ')';
+        loadContent(content);
+        editor.save();
+    });
 }
 NoteController.$inject = ['$scope', 'dropstoreClient'];
