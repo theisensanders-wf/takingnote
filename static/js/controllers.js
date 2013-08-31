@@ -4,6 +4,8 @@ function NoteController($scope) {
     $scope.folders = {};
     $scope.notes = [];
 
+    $scope.sidebarItems = [];
+
     var folderTable = null;
     var noteTable = null;
     var settingsTable = null;
@@ -11,6 +13,9 @@ function NoteController($scope) {
     var recentlyModifiedFolder = '';
     var currentFile = null;
     var editor = null;
+
+    $scope.sidebarType = 'notes';
+    $scope.activeSidebar = true;
 
     var settings = {
         darkTheme: true,
@@ -360,7 +365,6 @@ function NoteController($scope) {
             updateNote(currentFile, {content: content});
         }
 
-        reloadNotes();
     };
     $scope.saveNote = saveNote;
 
@@ -467,6 +471,10 @@ function NoteController($scope) {
         }
     };
 
+    $scope.getCurrentNote = function() {
+        return currentFile;
+    };
+
 
     //=========================================================================
     // Initialize App
@@ -491,6 +499,22 @@ function NoteController($scope) {
         initializeEditor();
     };
 
+    $scope.openSidebar = function() {
+        $scope.activeSidebar = true;
+    };
+
+    $scope.closeSidebar = function() {
+        $scope.activeSidebar = false;
+    };
+
+    $scope.toggleSidebar = function() {
+        $scope.activeSidebar = !$scope.activeSidebar;
+    };
+
+    $scope.setSidebarType = function(type) {
+        $scope.sidebarType = type;
+    }
+
     $scope.$on('authenticated', function () {
         init();
     });
@@ -503,4 +527,4 @@ function NoteController($scope) {
         editor.save();
     });
 }
-NoteController.$inject = ['$scope', 'dropstoreClient'];
+NoteController.$inject = ['$scope'];

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" ng-app="note">
+<html lang="en" ng-app="noteit">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,47 +15,39 @@
     <link href="../static/css/bootstrap-switch.css" rel="stylesheet">
 
     <style>
-            /*body {*/
-            /*background-color: rgb(41, 41, 41);*/
-            /*}*/
+        
+        .navigation {
+            /* Collapsed */
+            width: 0;
 
-            /*.toolbox {*/
-            /*position: relative;*/
-            /*margin-top: 100%;*/
-            /*height: 100%;*/
-            /*}*/
-
-        .toolbox .tools {
             position: fixed;
-            right: 0;
-            bottom: 0;
-            width: auto;
-            min-width: 200px;
+            top: 0;
+            left: 0;
+            height: 100%;
+            overflow-y: auto;
+            background-color: #fff;
         }
 
-        .toolbox .panel-title {
-            text-align: center;
-            font-size: 20px;
+        .page-wrap {
+            width: 100%;
+            float: right;
         }
 
-        .toolbox .folders .panel-title {
-            font-size: 14px;
+        .navigation, .page-wrap {
+            transition: width 0.8s ease;
         }
 
-        .toolbox .panel-body {
-            padding: 0;
-            border-radius: 0;
+        #main-navigation:target, #main-navigation.open {
+            width: 15%;
         }
 
-        .toolbox .list-group {
-            margin: 0;
+        #main-navigation:target, #main-navigation.open + .page-wrap {
+            width: 85%;
         }
 
-        .toolbox .list-group-item {
-            text-align: right;
-            cursor: pointer;
-        }
 
+
+            /*FILE UPLOADER*/
         .btn-file {
             position: relative;
             overflow: hidden;
@@ -76,134 +68,115 @@
             display: block;
         }
 
+        .sidebar-nav {
+            padding: 0;
+        }
+
+        .sidebar-nav-item {
+            text-align: center;
+        }
+
+        .sidebar-nav-item.active {
+            border-bottom: 1px solid #428bca;
+        }
+
     </style>
 
 </head>
 {% raw %}
 <body ng-controller="NoteController">
 
-<div class="toolbox">
-    <div class="tools">
 
+<!-- I am collapsed by default -->
+<nav id="main-navigation" class="navigation" ng-class="{open: activeSidebar}">
 
-        <div class="panel-group" id="toolbox">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">
-                        <a class="accordion-toggle" data-toggle="collapse"
-                           data-parent="#toolbox"
-                           href="#folders">
-                            <i class="icon-file"></i> Notes
-                        </a>
-                    </h4>
+    <!--Notes-->
+    <div class="list-group">
+        <div class="list-group-item sidebar-nav">
+            <div class="row">
+                <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='folders'}">
+                    <a href="#" ng-click="setSidebarType('folders')"><i class="icon icon-folder-open"></i></a>
                 </div>
-                <div id="folders" class="panel-collapse collapse">
-                    <div class="panel-body">
-
-                        <!--List of folder accordions-->
-                        <div class="panel-heading" ng-click="createFolder()">
-                            <h4 class="panel-title">Create new folder</h4>
-                        </div>
-                        <div class="panel-group folders" id="folder-{{ folder.getId() }}"
-                             ng-repeat="folder in folders">
-                            <div class="panel panel-default">
-                                <div class="panel-heading">
-                                    <h4 class="panel-title">
-                                        <a class="accordion-toggle" data-toggle="collapse"
-                                           data-parent="#folder-{{ folder.getId() }}"
-                                           href="#folder-{{ folder.getId() }}-files">
-                                            <i class="icon-folder-open"></i>
-                                            <span ng-bind="folder.get('name')"></span>
-                                        </a>
-                                        <button type="button" class="close"
-                                                ng-click="deleteFolder(folder)">&times;</button>
-                                    </h4>
-                                </div>
-                                <div id="folder-{{ folder.getId() }}-files"
-                                     class="panel-collapse collapse">
-                                    <div class="panel-body" style="padding: 7px;">
-                                        <ul class="list-group">
-
-                                            <!--List of files in folders-->
-                                            <li class="list-group-item files"
-                                                ng-repeat="note in notes | isInFolder:folder"
-                                                ng-click="openNote(note.getId())">
-                                                <span ng-bind="getCreated(note)"></span>
-                                                <span class="text-muted"
-                                                      ng-bind="getContentShort(note)"></span>
-                                                <button type="button" class="close"
-                                                        ng-click="removeNote(note)">&times;</button>
-                                            </li>
-
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!--Files without folders-->
-                        <ul class="list-group">
-                            <!--List of files in folders-->
-                            <li class="list-group-item files"
-                                ng-repeat="note in notes | isOrphaned"
-                                ng-click="openNote(note.getId())">
-                                <span ng-bind="getCreated(note)"></span>
-                                <span class="text-muted"
-                                      ng-bind="getContentShort(note)"></span>
-                                <button type="button" class="close"
-                                        ng-click="removeNote(note)">&times;</button>
-                            </li>
-                        </ul>
-                    </div>
+                <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='notes'}">
+                    <a href="#" ng-click="setSidebarType('notes')"><i
+                            class="icon icon-file"></i></a>
                 </div>
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h4 class="panel-title">
-                            <a class="accordion-toggle" data-toggle="collapse"
-                               data-parent="#toolbox"
-                               href="#settings">
-                                <i class="icon-cog"></i> Settings
-                            </a>
-                        </h4>
-                    </div>
-                    <div id="settings" class="panel-collapse collapse">
-                        <div class="panel-body">
-                            <ul class="list-group">
-                                <li class="list-group-item">Dark Theme
-                                    <div ng-model="settings.darkTheme" switch></div>
-                                </li>
-                                <li class="list-group-item">Autosave
-                                    <div ng-model="settings.autoSave" switch></div>
-                                </li>
-                                <li class="list-group-item">Font Size
-                                    <input style="width:50px" ng-model="settings.fontSize" type="number">
-                                </li>
-                                <li class="list-group-item text-center">
-                                    <div class="btn btn-primary btn-file">
-                                        Upload Custom CSS
-                                        <file-uploader></file-uploader>
-                                    </div>
-                                </li>
-                                <li class="list-group-item text-center">
-                                    <div class="btn btn-primary btn-file">
-                                        Upload Image
-                                        <file-uploader></file-uploader>
-                                    </div>
-                                </li>
-                                <li class="list-group-item text-center">
-                                    <button class="btn">Download</button>
-                                    <button class="btn">Print</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='time'}">
+                    <a href="#"><i class="icon icon-time"></i></a>
+                </div>
+                <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='settings'}">
+                    <a href="#" ng-click="setSidebarType('settings')"><i class="icon icon-cog"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <!--Folders-->
+        <div ng-show="sidebarType=='folders'">
+            <a class="list-group-item" ng-repeat="folder in folders">
+                <h4 ng-bind="folder.get('name')"></h4>
+                <span class="text-muted" ng-bind="getCreated(folder)"></span>
+                <button type="button" class="close" ng-click="deleteNote(note)">&times;</button>
+            </a>
+        </div>
+
+        <!--Notes-->
+        <div ng-show="sidebarType=='notes'">
+            <a ng-class="{active: getCurrentNote()==note.getId()}" ng-click="openNote(note.getId())"
+               ng-dblclick="closeSidebar()"
+               class="list-group-item" ng-repeat="note in notes">
+                <h4 ng-bind="getCreated(note)"></h4>
+                <span class="text-muted" ng-bind="note.get('content')"></span>
+                <button type="button" class="close" ng-click="deleteNote(note)">&times;</button>
+            </a>
+        </div>
+
+        <!--Settings-->
+        <div ng-show="sidebarType=='settings'">
+            <a class="list-group-item">
+                <h4 style="display: inline">Dark Theme:</h4>
+
+                <div ng-model="settings.darkTheme" switch></div>
+            </a>
+            <a class="list-group-item">
+                <h4 style="display: inline">Autosave:</h4>
+
+                <div ng-model="settings.autoSave" switch></div>
+            </a>
+            <a class="list-group-item">
+                <h4 style="display: inline">Font Size:</h4>
+                <input style="width:50px" ng-model="settings.fontSize" type="number">
+            </a>
+
+            <div class="list-group-item">
+                <div class="btn btn-primary btn-file">
+                    <h4 style="display: inline">Upload Image</h4>
+
+                    <div file-uploader></div>
+                </div>
+            </div>
+            <div class="list-group-item">
+                <div class="btn btn-primary btn-file">
+                    <h4 style="display: inline">Custom CSS</h4>
+
+                    <div file-uploader></div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+</nav>
 
-<div id="epic-editor" style="height: 100%;"></div>
+
+<!-- I am full width by default -->
+<div class="page-wrap">
+    <div style="margin: 10px">
+        <a class="btn" href="#" ng-click="toggleSidebar()">
+            <i class="icon icon-reorder icon-2x"></i>
+        </a>
+    </div>
+
+    <!-- content -->
+    <div id="epic-editor"></div>
+</div>
 
 
 <!--Scripts-->
