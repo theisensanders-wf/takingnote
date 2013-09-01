@@ -36,48 +36,54 @@ angular.module('directives', [])
 
             }
         }
+    })
+    .directive('editable', function () {
+        return {
+            scope: {
+                value: '=',
+                callback: '&',
+                objId: '='
+            },
+            template: '<div><span ng-hide="editing" ng-click="edit()" ng-bind="value"></span><input ng-show="editing" ng-model="newValue"></div>',
+            link: function ($scope, element, attrs) {
+                $scope.editing = false;
+                $scope.newValue = $scope.value;
+
+                var inputElement = element.find('input');
+
+                // ng-click handler to activate edit-in-place
+                $scope.edit = function () {
+                    $scope.editing = true;
+                    $scope.$apply();
+
+                    inputElement[0].focus();
+                    inputElement[0].select();
+                };
+
+                function cancel() {
+                    $scope.editing = false;
+                    $scope.newValue = $scope.value;
+                    $scope.$apply();
+                }
+
+                function save() {
+                    $scope.editing = false;
+                    $scope.callback({id: $scope.objId, value: $scope.newValue});
+                    $scope.$apply();
+                }
+
+                // When we leave the input, we're done editing.
+                inputElement.blur(save);
+
+                inputElement.keyup(function (e) {
+                    if (e.keyCode == 27) {
+                        // ESC
+                        cancel();
+                    } else if (e.keyCode == 13) {
+                        // Enter
+                        save();
+                    }
+                })
+            }
+        };
     });
-//    .directive("editable", function () {
-//        var editorTemplate = '<div>' +
-//                '<div ng-hide="editing">' +
-//                    '<a ng-click="edit()"></a>' +
-//                '</div>' +
-//                '<div ng-show="editing">' +
-//                    '<input ng-model="inputVal">' +
-//                    '<a href="#" ng-click="save()">Save</a>' +
-//                '</div>' +
-//            '</div>';
-//
-//        return {
-//            restrict: "A",
-//            replace: true,
-//            template: editorTemplate,
-//            scope: {
-//                value: "=editable"
-//            },
-//            controller: function ($scope) {
-////                var obj = $scope.value['obj'];
-////                var callback = $scope.value['callback'];
-////                var attr = $scope.value['attr'];
-//
-////                $scope.inputVal = $scope.value;
-////                $scope.editing = false;
-////
-////
-////                console.log($scope.attr);
-////
-////                $scope.edit = function() {
-////                    $scope.editing = true;
-////                };
-////
-////                $scope.save = function() {
-////                    $scope.editing = false;
-//////                    $scope.callback({newName: $scope.inputVal});
-//////                    $scope.
-////                }
-//            },
-//            link: function($scope) {
-////                alert($scope.editing);
-//            }
-//        };
-//    });

@@ -11,7 +11,7 @@ function NoteController($scope) {
     var settingsTable = null;
 
     var recentlyModifiedFolder = '';
-    var currentFile = null;
+    $scope.currentNote = null;
     var editor = null;
 
     $scope.sidebarType = 'notes';
@@ -174,8 +174,7 @@ function NoteController($scope) {
     //=========================================================================
     // Folder Helper Methods
     //=========================================================================
-    $scope.createFolder = function () {
-        var name = 'New Folder';
+    $scope.createFolder = function (name) {
         createFolder(name);
         reloadFolders();
     };
@@ -183,6 +182,10 @@ function NoteController($scope) {
     $scope.deleteFolder = function (folder) {
         deleteFolder(folder.getId(), false);
         reloadFolders();
+    };
+
+    $scope.renameFolder = function(folderId, newName) {
+        updateFolder(folderId, {name: newName});
     };
 
     var addNoteToFolder = function (folder, noteID) {
@@ -317,20 +320,20 @@ function NoteController($scope) {
 
     var reloadNotes = function () {
         $scope.notes = noteTable.query();
-        if (currentFile != null) {
-            openNote(currentFile);
+        if ($scope.currentNote != null) {
+            openNote($scope.currentNote);
         }
     };
 
     var openNote = function (id) {
         var note = getNote(id);
         loadContent(note.get('content'));
-        currentFile = id;
+        $scope.currentNote = id;
     };
     $scope.openNote = openNote;
 
     var closeNote = function () {
-        currentFile = null;
+        $scope.currentNote = null;
         loadContent('');
         editor.focus();
     };
@@ -348,7 +351,7 @@ function NoteController($scope) {
 
     var removeNote = function (note) {
         var id = note.getId();
-        if (id == currentFile) {
+        if (id == $scope.currentNote) {
             closeNote();
         }
         deleteNote(id);
@@ -358,11 +361,11 @@ function NoteController($scope) {
     var saveNote = function () {
         var content = getContent();
 
-        if (currentFile == null) {
+        if ($scope.currentNote == null) {
             var note = createNote(content);
-            currentFile = note.getId();
+            $scope.currentNote = note.getId();
         } else {
-            updateNote(currentFile, {content: content});
+            updateNote($scope.currentNote, {content: content});
         }
 
     };
@@ -421,11 +424,11 @@ function NoteController($scope) {
     };
 
     var initializeSettings = function () {
-        // Initialize the settings in the datastore
-//        var db_settings = getSettings();
-//        for (var i = 0; i < db_settings.length; i++) {
-//            db_settings[i].deleteRecord();
-//        }
+//        Initialize the settings in the datastore
+        var db_settings = getSettings();
+        for (var i = 0; i < db_settings.length; i++) {
+            db_settings[i].deleteRecord();
+        }
 
         for (var settingName in settings) {
             var value = settings[settingName];
@@ -440,65 +443,9 @@ function NoteController($scope) {
         }
     };
 
-
     //=========================================================================
-    // General helper methods
+    // Sidebar
     //=========================================================================
-    $scope.getContentShort = function (note) {
-        return note.get('content').substr(0, 10);
-    };
-
-    $scope.toggleTheme = function () {
-        var setting = toggleSetting('darkTheme');
-    };
-
-    var syncData = function () {
-        var folders = getFolders();
-        for (var i = 0; i < folders.length; i++) {
-            var folder = folders[i];
-            $scope.folders[folder] = getNotes({folder: folder.getId()});
-        }
-    };
-
-    var clearData = function () {
-        var items = getSettings().concat(getFolders()).concat(getNotes());
-        console.log(items);
-        for (var i = 0; i < items.length; i++) {
-            var item = items[i];
-            if (!item.isDeleted()) {
-                item.deleteRecord();
-            }
-        }
-    };
-
-    $scope.getCurrentNote = function() {
-        return currentFile;
-    };
-
-
-    //=========================================================================
-    // Initialize App
-    //=========================================================================
-    var init = function () {
-        noteTable = $scope.datastore.getTable('notes');
-        folderTable = $scope.datastore.getTable('folders');
-        settingsTable = $scope.datastore.getTable('settings');
-
-        var ptr = $scope.datastore.SubscribeRecordsChanged(function(records){
-            reloadNotes();
-            reloadFolders();
-            initializeSettings();
-        });
-
-        reloadNotes();
-        reloadFolders();
-
-//        clearData();
-
-        initializeSettings();
-        initializeEditor();
-    };
-
     $scope.openSidebar = function() {
         $scope.activeSidebar = true;
     };
@@ -513,7 +460,47 @@ function NoteController($scope) {
 
     $scope.setSidebarType = function(type) {
         $scope.sidebarType = type;
-    }
+    };
+
+
+    //=========================================================================
+    // General helper methods
+    //=========================================================================
+    var clearData = function () {
+        var items = getSettings().concat(getFolders()).concat(getNotes());
+        console.log(items);
+        for (var i = 0; i < items.length; i++) {
+            var item = items[i];
+            if (!item.isDeleted()) {
+                item.deleteRecord();
+            }
+        }
+    };
+
+
+    //=========================================================================
+    // Initialize App
+    //=========================================================================
+    var init = function () {
+        noteTable = $scope.datastore.getTable('notes');
+        folderTable = $scope.datastore.getTable('folders');
+        settingsTable = $scope.datastore.getTable('settings');
+
+//        var ptr = $scope.datastore.SubscribeRecordsChanged(function(records){
+//            reloadNotes();
+//            reloadFolders();
+//            initializeSettings();
+//        });
+
+        reloadNotes();
+        reloadFolders();
+
+//        clearData();
+
+        initializeSettings();
+        initializeEditor();
+    };
+
 
     $scope.$on('authenticated', function () {
         init();

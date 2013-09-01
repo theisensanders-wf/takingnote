@@ -15,7 +15,7 @@
     <link href="../static/css/bootstrap-switch.css" rel="stylesheet">
 
     <style>
-        
+
         .navigation {
             /* Collapsed */
             width: 0;
@@ -69,7 +69,7 @@
         }
 
         .sidebar-nav {
-            padding: 0;
+
         }
 
         .sidebar-nav-item {
@@ -95,33 +95,36 @@
         <div class="list-group-item sidebar-nav">
             <div class="row">
                 <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='folders'}">
-                    <a href="#" ng-click="setSidebarType('folders')"><i class="icon icon-folder-open"></i></a>
+                    <a href="#" ng-click="setSidebarType('folders')"><i class="icon icon-folder-open icon-large"></i></a>
                 </div>
                 <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='notes'}">
                     <a href="#" ng-click="setSidebarType('notes')"><i
-                            class="icon icon-file"></i></a>
+                            class="icon icon-file icon-large"></i></a>
                 </div>
                 <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='time'}">
-                    <a href="#"><i class="icon icon-time"></i></a>
+                    <a href="#"><i class="icon icon-time icon-large"></i></a>
                 </div>
                 <div class="col-lg-3 sidebar-nav-item" ng-class="{active: sidebarType=='settings'}">
-                    <a href="#" ng-click="setSidebarType('settings')"><i class="icon icon-cog"></i></a>
+                    <a href="#" ng-click="setSidebarType('settings')"><i class="icon icon-cog icon-large"></i></a>
                 </div>
             </div>
         </div>
 
         <!--Folders-->
         <div ng-show="sidebarType=='folders'">
+            <a class="list-group-item" ng-click="createFolder('New Folder')">
+                <h4>Create a new folder</h4>
+            </a>
             <a class="list-group-item" ng-repeat="folder in folders">
-                <h4 ng-bind="folder.get('name')"></h4>
+                <h4 value="folder.get('name')" obj-id="folder.getId()" callback="renameFolder(id, value)" editable></h4>
                 <span class="text-muted" ng-bind="getCreated(folder)"></span>
-                <button type="button" class="close" ng-click="deleteNote(note)">&times;</button>
+                <button type="button" class="close" ng-click="deleteFolder(folder)">&times;</button>
             </a>
         </div>
 
         <!--Notes-->
         <div ng-show="sidebarType=='notes'">
-            <a ng-class="{active: getCurrentNote()==note.getId()}" ng-click="openNote(note.getId())"
+            <a ng-class="{active: currentNote==note.getId()}" ng-click="openNote(note.getId())"
                ng-dblclick="closeSidebar()"
                class="list-group-item" ng-repeat="note in notes">
                 <h4 ng-bind="getCreated(note)"></h4>
