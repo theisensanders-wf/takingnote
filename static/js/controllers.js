@@ -1,5 +1,10 @@
 var APP_KEY = 'owmans4v3jkpi5x';
 
+/**
+ * Main controller
+ * @param {object} $scope - application model
+ * @constructor
+ */
 function NoteController($scope) {
     $scope.folders = {};
     $scope.notes = [];
@@ -10,8 +15,8 @@ function NoteController($scope) {
     var noteTable = null;
     var settingsTable = null;
 
-    var recentlyModifiedFolder = '';
     $scope.currentNote = null;
+    $scope.currentFolder = null;
     var editor = null;
 
     $scope.sidebarType = 'notes';
@@ -28,11 +33,15 @@ function NoteController($scope) {
     //=========================================================================
     // Editor
     //=========================================================================
-    var initializeEditor = function () {
-        settings.darkTheme = getSettingByName('darkTheme').get('value');
-        var theme = settings.darkTheme ? '/epic-dark.css' : '/epic-light.css';
 
-        var epicOptions = {
+    /**
+     * Represents the markdown editor
+     * @constructor
+     */
+    var Editor = function () {
+        settings.darkTheme = SettingAPI.getByName('darkTheme').get('value');
+
+        var options = {
             container: 'epic-editor',
             basePath: 'static/css',
             clientSideStorage: false,
@@ -50,66 +59,117 @@ function NoteController($scope) {
             }
         };
 
-        // Set background color
-        var background_color = $scope.settings.darkTheme ? 'rgb(41, 41, 41)' : '#fff';
-        $('body').css('background-color', background_color);
 
-        editor = new EpicEditor(epicOptions);
-        editor.load();
-        editor.focus();
+        this._editor = new EpicEditor(options);
 
-        initializeListeners();
-    };
+        var initializeListeners = function (editor) {
+            var save = function () {
+                $scope.saveNote();
+                $scope.$apply();
+            };
 
+            editor.on('autosave', save);
+    //        editor.on('save', save);  Breaking for some reason that has to do with $apply
 
-    //=========================================================================
-    // Editor Listeners
-    //=========================================================================
-    var initializeListeners = function () {
-        var save = function () {
-            $scope.saveNote();
-            $scope.$apply();
+            $scope.$watch('settings.darkTheme', function (newValue) {
+                SettingAPI.getByName('darkTheme').set('value', newValue);
+            });
+
+            $scope.$watch('settings.fontSize', function (newValue) {
+                SettingAPI.getByName('fontSize').set('value', newValue);
+            });
+
+            $scope.$watch('settings.autoSave', function (newValue) {
+                SettingAPI.getByName('autoSave').set('value', newValue);
+            });
         };
 
-        editor.on('autosave', save);
-//        editor.on('save', save);  Breaking for some reason that has to do with $apply
 
-        $scope.$watch('settings.darkTheme', function (newValue) {
-            getSettingByName('darkTheme').set('value', newValue);
-        });
+        /**
+         * Get the content of the editor
+         * @returns {string} - the content of the editor
+         */
+        this.getContent = function () {
+            return this._editor.exportFile();
+        };
 
-        $scope.$watch('settings.fontSize', function (newValue) {
-            getSettingByName('fontSize').set('value', newValue);
-        });
 
-        $scope.$watch('settings.autoSave', function (newValue) {
-            getSettingByName('autoSave').set('value', newValue);
-        });
+        /**
+         * Loads content into the editor, replaces existing content
+         * @param {string} content - the content to load
+         */
+        this.loadContent = function (content) {
+            this._editor.importFile('epiceditor', content)
+        };
+
+
+        /**
+         * Clears the content of the editor
+         */
+        this.clearContent = function () {
+            this.loadContent('');
+        };
+
+
+        /**
+         * Append content to the end of the file
+         * @param {string} content - the content to append
+         */
+        this.appendContent = function (content) {
+            content = this.getContent() + content;
+            this.loadContent(content);
+            _editor.save();
+        };
+
+
+
+        this._editor.load();
+        this._editor.focus();
+        initializeListeners(this._editor);
+        return this;
     };
 
 
     //=========================================================================
     // Folders API
     //=========================================================================
-    var getFolders = function (fieldValues) {
-        /*
-         Return the folders in the datastore
-         */
+
+    /**
+     * API for getting, creating, updating, and deleting Folders
+     * @constructor
+     * @todo Move this to an Angular Service
+     */
+    var FolderAPI = function () {};
+
+
+    /**
+     * Get the folders in the datastore
+     * @param {object} [fieldValues] - properties of folders, if undefined will get all folders
+     * @returns {array} - folders matching given properties
+     */
+    FolderAPI.query = function (fieldValues) {
         fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {};
         return folderTable.query(fieldValues);
     };
 
-    var getFolder = function (id) {
-        /*
-         Return the folder with the specified ID
-         */
+
+    /**
+     * Get a folder with the specified id
+     * @param {string} id - the id of the folder to get
+     * @returns {object} Folder with the given id
+     */
+    FolderAPI.get = function (id) {
         return folderTable.get(id);
     };
 
-    var createFolder = function (name, fieldValues) {
-        /*
-         Create a new folder in the datastore with the given name
-         */
+
+    /**
+     * Create a new folder
+     * @param {string} name - the name of the folder
+     * @param {object} [fieldValues] - other properties of the folder
+     * @returns {object} Created folder
+     */
+    FolderAPI.create = function (name, fieldValues) {
         var date = new Date();
         name = typeof name !== 'undefined' ? name : 'New Folder';
         fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {
@@ -119,24 +179,23 @@ function NoteController($scope) {
             name: name
         };
 
-        // Create folder
-        var folder = folderTable.insert(fieldValues);
-
-        // Add as recently modified folder
-        recentlyModifiedFolder = folder.getId();
-
-        return folder;
+        // Create and return folder
+        return folderTable.insert(fieldValues);
     };
 
-    var deleteFolder = function (id, include_files) {
-        /*
-         Delete folder from datastore, if include_files then delete files in folder
-         */
+
+    /**
+     * Delete folder with the given id
+     * @param {string} id - the id of the folder to delete
+     * @param {boolean} [include_files=false] - delete the files contained in the folder
+     * @returns {object} Deleted folder
+     */
+    FolderAPI.delete = function (id, include_files) {
         include_files = typeof include_files !== 'undefined' ? include_files : false;
 
-        var folder = getFolder(id);
+        var folder = FolderAPI.get(id);
 
-        var notes = getNotes({folder: id});
+        var notes = FolderAPI.query({folder: id});
         for (var i = 0; i < notes.length; i++) {
             var note = notes[i];
             if (include_files) {
@@ -147,45 +206,76 @@ function NoteController($scope) {
             }
         }
 
-        // Remove from recentlyModifiedFile if necessary
-        if (folder.getId() == recentlyModifiedFolder) {
-            recentlyModifiedFolder = '';
-        }
-
         // Delete folder
         folder.deleteRecord();
         return folder;
     };
 
-    var updateFolder = function (id, props) {
-        /*
-         Update the note with the given properties
-         */
-        var folder = getFolder(id);
+
+    /**
+     * Update a folder with the given properties
+     * @param {string} id - the id of the folder to update
+     * @param {object} props - the properties to add/change on the folder
+     * @returns {object} Updated folder
+     */
+    FolderAPI.update = function (id, props) {
+        var folder = FolderAPI.get(id);
         props = typeof props !== 'undefined' ? props : {};
         props['modified'] = new Date();
 
-        // Add as recently modified folder
-        recentlyModifiedFolder = id;
-
         return folder.update(props)
     };
+
+
+    /**
+     * Rename the folder with the given id
+     * @param {string} id - the id of the folder to rename
+     * @param {string} newName - the new name of the folder
+     */
+    FolderAPI.rename = function (id, newName) {
+        FolderAPI.update(id, {name: newName});
+    };
+
+
+    /**
+     * Add a note to the folder. This will not update the note.
+     * @param {string} id - the id of the folder
+     * @param {string} noteId - the id of the note to add
+     */
+    FolderAPI.addNote = function (id, noteId) {
+        var folder = FolderAPI.get(id);
+        folder.get('notes').push(noteId);
+    };
+
+
+    /**
+     * Removes a note from the folder. This will not update the note.
+     * @param {string} id - the id of the folder
+     * @param {string} noteId - the id of the note to remove
+     */
+    FolderAPI.removeNote = function (id, noteId) {
+        var folder = FolderAPI.get(id);
+        var notes = folder.get('notes');
+        var index = notes.toArray().indexOf(noteId);
+        notes.splice(index, 1);
+    };
+
 
     //=========================================================================
     // Folder Helper Methods
     //=========================================================================
     $scope.createFolder = function (name) {
-        createFolder(name);
+        FolderAPI.create(name);
         reloadFolders();
     };
 
     $scope.deleteFolder = function (folder) {
-        deleteFolder(folder.getId(), false);
+        FolderAPI.delete(folder.getId(), false);
         reloadFolders();
     };
 
-    $scope.renameFolder = function(folderId, newName) {
-        updateFolder(folderId, {name: newName});
+    $scope.renameFolder = function (folderId, newName) {
+        FolderAPI.update(folderId, {name: newName});
     };
 
     var addNoteToFolder = function (folder, noteID) {
@@ -200,7 +290,7 @@ function NoteController($scope) {
 
     var reloadFolders = function () {
         var folders = [];
-        var folder_entities = getFolders();
+        var folder_entities = FolderAPI.query();
         for (var i = 0; i < folder_entities.length; i++) {
             var folder = folder_entities[i];
             folders.push(folder);
@@ -211,60 +301,82 @@ function NoteController($scope) {
     //=========================================================================
     // Notes API
     //=========================================================================
-    var getNotes = function (fieldValues) {
-        /*
-         Return the notes in the datastore
-         */
+
+    /**
+     * API for getting, creating, updating, and deleting Notes
+     * @constructor
+     * @todo Move this to an Angular Service
+     */
+    var NoteAPI = function () {};
+
+
+    /**
+     * Get the notes in the datastore
+     * @param {object} [fieldValues] - properties of notes, if undefined will get all notes
+     * @returns {array} - notes matching given properties
+     */
+    NoteAPI.query = function (fieldValues) {
         fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {};
         return noteTable.query(fieldValues);
     };
 
-    var getNote = function (id) {
-        /*
-         Return the note with the specified ID
-         */
+
+    /**
+     * Get the note with the specified id
+     * @param {string} id - the id of the note to get
+     * @returns {object} Note with the given id
+     */
+    NoteAPI.get = function (id) {
         return noteTable.get(id);
     };
 
-    var createNote = function (content, folderId, fieldValues) {
-        /*
-         Create a new note in the datastore with the given content
-         */
-        var date = new Date();
 
-        // Default parameters
+    /**
+     * Create a new note
+     * @param {string} name - the name of the note
+     * @param {string} folderId - the id of the folder it belongs to
+     * @param {string} content - the content of the note
+     * @returns {object} Created Note
+     */
+    NoteAPI.create = function (name, folderId, content) {
+        var date = new Date();
         content = typeof content !== 'undefined' ? content : '';
-        folderId = typeof folderId !== 'undefined' ? folderId : recentlyModifiedFolder;
-        fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {
+
+        var values = {
+            name: name,
             created: date,
             modified: date,
-            content: content,
+            content: typeof content !== 'undef',
             folder: folderId
         };
 
-        // Create Note
-        var note = noteTable.insert(fieldValues);
+        if (!values.name || typeof values.name !== 'string') { throw "Invalid Note Name" }
+        if (!values.folder || typeof values.folder !== 'string') { throw "Invalid Folder ID" }
 
-        // If folder specified, insert into folder
-        if (folderId.length > 0) {
-            var folder = getFolder(folderId);
-            console.log(folder);
-            addNoteToFolder(folder, note.getId())
-        }
+        var folder = FolderAPI.getFolder(folder);
+        if (!folder) { throw "Folder does not exist" }
+
+        // Create Note
+        var note = noteTable.insert(values);
+
+        // Add note to folder
+        addNoteToFolder(folder, note.getId());
 
         return note;
     };
 
-    var deleteNote = function (id) {
-        /*
-         Delete the note for the datastore
-         */
-        var note = getNote(id);
+
+    /**
+     * Delete a note
+     * @param {string} id - the id of the note to delete
+     */
+    NoteAPI.delete = function (id) {
+        var note = FolderAPI.get(id);
 
         // Remove from folder
         var folderId = note.get('folder');
         if (folderId != null && folderId.length > 0) {
-            removeNoteFromFolder(getFolder(folderId), note);
+            removeNoteFromFolder(FolderAPI.getFolder(id), note);
         }
 
         // Delete note
@@ -273,11 +385,15 @@ function NoteController($scope) {
         return note;
     };
 
-    var updateNote = function (id, props) {
-        /*
-         Update the note with the given properties
-         */
-        var note = getNote(id);
+
+    /**
+     * Update a note with the given id
+     * @param {string} id - the id of the note to update
+     * @param {object} props - the properties of the note to update
+     * @returns {Object} Updated note
+     */
+    NoteAPI.update = function (id, props) {
+        var note = NoteAPI.get(id);
 
         // Default parameters
         props = typeof props !== 'undefined' ? props : {};
@@ -294,11 +410,11 @@ function NoteController($scope) {
             // Make sure that folder is actually changing
             if (newFolderId != currentFolderId) {
                 // Remove from current folder
-                var currentFolder = getFolder(props['folder']);
+                var currentFolder = FolderAPI.get(props['folder']);
                 removeNoteFromFolder(currentFolder, id);
 
                 // Add to new folder
-                var newFolder = getFolder(newFolderId);
+                var newFolder = FolderAPI.get(newFolderId);
                 addNoteToFolder(newFolder, id)
             }
         }
@@ -307,17 +423,48 @@ function NoteController($scope) {
     };
 
 
+    /**
+     * Rename the note with the given id
+     * @param {string} id - the id of the note to rename
+     * @param {string} newName - the new name of the note
+     * @returns {object} Renamed note
+     */
+    NoteAPI.rename = function (id, newName) {
+        return NoteAPI.update(id, {name: newName})
+    };
+
+
+    /**
+     * Get the shortened content of the note
+     * @param {string} id - the id of the note
+     * @param {number} [maxLength=15] - the max length of the content
+     * @param {boolean} [breakOnNewLine=true] - break at a new line
+     */
+    NoteAPI.getShortContent = function (id, maxLength, breakOnNewLine) {
+        // Default params
+        maxLength = typeof maxLength !== 'undefined' ? maxLength : 15;
+        breakOnNewLine = typeof breakOnNewLine !== 'undefined' ?  breakOnNewLine : true;
+
+        var note = NoteAPI.get(id);
+        var content = note.get('content');
+
+        // Split by new line
+        var splitByNewLine = content.match(/[^\r\n]+/g);
+        for (var i = 0; i < splitByNewLine.length; i++) {
+            var line = splitByNewLine[i].trim();
+
+            if (line.length > 0) {
+                // TODO put line through markdown processor
+                return line.substring(0, maxLength);
+            }
+        }
+        return ''
+    };
+
+
     //=========================================================================
     // Note Helper Methods
     //=========================================================================
-    var loadContent = function (content) {
-        editor.importFile('epiceditor', content)
-    };
-
-    var getContent = function () {
-        return editor.exportFile();
-    };
-
     var reloadNotes = function () {
         $scope.notes = noteTable.query();
         if ($scope.currentNote != null) {
@@ -326,16 +473,15 @@ function NoteController($scope) {
     };
 
     var openNote = function (id) {
-        var note = getNote(id);
-        loadContent(note.get('content'));
+        var note = NoteAPI.get(id);
+        editor.loadContent(note.get('content'));
         $scope.currentNote = id;
     };
     $scope.openNote = openNote;
 
     var closeNote = function () {
         $scope.currentNote = null;
-        loadContent('');
-        editor.focus();
+        editor.clearContent();
     };
     $scope.closeNote = closeNote;
 
@@ -348,24 +494,28 @@ function NoteController($scope) {
     };
     $scope.getCreated = getCreated;
 
+    $scope.shortContent = function (note) {
+        return NoteAPI.getShortContent(note.getId());
+    };
+
 
     var removeNote = function (note) {
         var id = note.getId();
         if (id == $scope.currentNote) {
             closeNote();
         }
-        deleteNote(id);
+       NoteAPI.delete(id);
     };
     $scope.removeNote = removeNote;
 
     var saveNote = function () {
-        var content = getContent();
+        var content = editor.getContent();
 
         if ($scope.currentNote == null) {
-            var note = createNote(content);
+            var note = NoteAPI.create('New Note', 'test', content);
             $scope.currentNote = note.getId();
         } else {
-            updateNote($scope.currentNote, {content: content});
+            NoteAPI.update($scope.currentNote, {content: content});
         }
 
     };
@@ -375,25 +525,42 @@ function NoteController($scope) {
     //=========================================================================
     // Settings API
     //=========================================================================
-    var getSettings = function (fieldValues) {
-        /*
-         Query for all the settings in the datastore with the specified properties
-         */
+
+    /**
+     * API for getting, creating, updating, and deleting Settings
+     * @constructor
+     */
+    var SettingAPI = function () {};
+
+
+    /**
+     * Query for settings matching the given values
+     * @param [fieldValues] - the values of the settings to get, if undefined gets all settings
+     * @returns {array} the settings matching the given values
+     */
+    SettingAPI.query = function (fieldValues) {
         fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {};
         return settingsTable.query(fieldValues);
     };
 
-    var getSetting = function (id) {
-        /*
-         Get a specific setting from the datastore
-         */
+
+    /**
+     * Gets the setting with the given id
+     * @param {string} id - the id of the setting to get
+     * @returns {object} the setting with the given id
+     */
+    SettingAPI.get = function (id) {
         return settingsTable.get(id)
     };
 
-    var createSetting = function (name, value) {
-        /*
-         Create a new setting with the given name and value
-         */
+
+    /**
+     * Create a new setting
+     * @param {string} name - the name of the setting
+     * @param {string|boolean|number} value - the value of the setting
+     * @returns {object} Created setting
+     */
+    SettingAPI.create = function (name, value) {
         value = typeof value !== 'undefined' ? value : null;
         return settingsTable.insert({
             name: name,
@@ -401,31 +568,75 @@ function NoteController($scope) {
         })
     };
 
-    var updateSetting = function (id, value) {
-        /*
-         Update the setting with the given id with a specified value
-         */
-        var setting = getSetting(id);
-        return setting.set('value', value);
+
+    /**
+     * Update setting with the given id
+     * @param {string} id - the id of the setting to update
+     * @param {object} props - the properties of the setting to update
+     * @returns {object} Updated setting
+     */
+    SettingAPI.update = function (id, props) {
+        var setting = SettingAPI.get(id);
+        return setting.update(props);
+    };
+
+
+    /**
+     * Delete the setting with the given id
+     * @param {string} id - the id of the setting to delete
+     * @returns {object} Deleted setting
+     */
+    SettingAPI.delete = function (id) {
+        return SettingAPI.get(id).deleteRecord();
+    };
+
+
+    /**
+     * Get a setting by its name
+     * @param {string} name - the name of the setting to get
+     * @returns {object} Setting with given name
+     */
+    SettingAPI.getByName = function (name) {
+        return SettingAPI.query({name: name})[0];
+    };
+
+
+    /**
+     * Change the value of a function with the given id
+     * @param {string} id - the id of the function to change
+     * @param {string|boolean|number} newValue - the new value of the setting
+     * @returns {*|Object|Object|Object}
+     */
+    SettingAPI.changeValue = function (id, newValue) {
+        return SettingAPI.update({value: newValue});
+    };
+
+
+    /**
+     * Toggle a given setting. The setting must be a boolean setting
+     * @param {string} id - the id of the setting to toggle
+     * @returns {object} - the updated setting
+     */
+    SettingAPI.toggle = function (id) {
+        var setting = SettingAPI.get(id);
+        var value = setting.get('value');
+
+        if (typeof value !== "boolean") {
+            throw "Cannot toggle a non-boolean setting"
+        }
+
+        return setting.set('value', !value);
     };
 
 
     //=========================================================================
     // Settings Helper Methods
     //=========================================================================
-    var getSettingByName = function (name) {
-        return getSettings({name: name})[0];
-    };
 
-    var toggleSetting = function (name) {
-        var setting = getSettingByName(name);
-        var newValue = !setting.get('value');
-        return setting.set('value', newValue);
-    };
 
     var initializeSettings = function () {
 //        Initialize the settings in the datastore
-        var db_settings = getSettings();
+        var db_settings = SettingAPI.query();
         for (var i = 0; i < db_settings.length; i++) {
             db_settings[i].deleteRecord();
         }
@@ -434,9 +645,9 @@ function NoteController($scope) {
             var value = settings[settingName];
 
             // Check if in current settings, if not add it
-            var setting = getSettingByName(settingName);
+            var setting = SettingAPI.getByName(settingName);
             if (setting === undefined) {
-                createSetting(settingName, value)
+                SettingAPI.create(settingName, value)
             } else {
                 settings[setting.get('name')] = setting.get('value');
             }
@@ -446,19 +657,19 @@ function NoteController($scope) {
     //=========================================================================
     // Sidebar
     //=========================================================================
-    $scope.openSidebar = function() {
+    $scope.openSidebar = function () {
         $scope.activeSidebar = true;
     };
 
-    $scope.closeSidebar = function() {
+    $scope.closeSidebar = function () {
         $scope.activeSidebar = false;
     };
 
-    $scope.toggleSidebar = function() {
+    $scope.toggleSidebar = function () {
         $scope.activeSidebar = !$scope.activeSidebar;
     };
 
-    $scope.setSidebarType = function(type) {
+    $scope.setSidebarType = function (type) {
         $scope.sidebarType = type;
     };
 
@@ -467,7 +678,7 @@ function NoteController($scope) {
     // General helper methods
     //=========================================================================
     var clearData = function () {
-        var items = getSettings().concat(getFolders()).concat(getNotes());
+        var items = SettingAPI.query().concat(NoteAPI.query()).concat(FolderAPI.query());
         console.log(items);
         for (var i = 0; i < items.length; i++) {
             var item = items[i];
@@ -498,7 +709,7 @@ function NoteController($scope) {
 //        clearData();
 
         initializeSettings();
-        initializeEditor();
+        editor = Editor();
     };
 
 
@@ -507,11 +718,7 @@ function NoteController($scope) {
     });
 
     $scope.$on('New Image', function (event, url) {
-        console.log(url);
-        var content = getContent();
-        content += '![](' + url + ')';
-        loadContent(content);
-        editor.save();
+        editor.appendContent('![](' + url + ')');
     });
 }
 NoteController.$inject = ['$scope'];

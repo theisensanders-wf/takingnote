@@ -124,11 +124,14 @@
 
         <!--Notes-->
         <div ng-show="sidebarType=='notes'">
+            <a class="list-group-item" ng-click="createNote('New Folder')">
+                <h4>Create a new folder</h4>
+            </a>
             <a ng-class="{active: currentNote==note.getId()}" ng-click="openNote(note.getId())"
                ng-dblclick="closeSidebar()"
                class="list-group-item" ng-repeat="note in notes">
-                <h4 ng-bind="getCreated(note)"></h4>
-                <span class="text-muted" ng-bind="note.get('content')"></span>
+                <h4 ng-bind="note.get('name')"></h4>
+                <span class="text-muted" ng-bind="shortContent(note)"></span>
                 <button type="button" class="close" ng-click="deleteNote(note)">&times;</button>
             </a>
         </div>
