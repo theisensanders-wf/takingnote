@@ -1,15 +1,28 @@
 angular.module('filters', [])
     .filter('isInFolder', function () {
-        return function (notes, folder) {
-            var folderId = folder.getId();
-
-            var notesInFolder = [];
-            for (var i = 0; i < notes.length; i++) {
-                if (notes[i].get('folder') == folderId) {
-                    notesInFolder.push(notes[i]);
+        return function (notes, folderId) {
+            var i;
+            if (folderId == null) {
+//                var orphanedNotes = [];
+//                for (i = 0; i < notes.length; i++) {
+//                    folderId = notes[i].get('folder');
+//                    if (!folderId || folderId.length < 1) {
+//                        orphanedNotes.push(notes[i]);
+//                    }
+//                }
+//                return orphanedNotes;
+                return notes;
+            } else {
+                var notesInFolder = [];
+                for (i = 0; i < notes.length; i++) {
+                    if (notes[i].get('folder') == folderId) {
+                        notesInFolder.push(notes[i]);
+                    }
                 }
+                return notesInFolder;
             }
-            return notesInFolder;
+
+
         }
     })
     .filter('isOrphaned', function () {

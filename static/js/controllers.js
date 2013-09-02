@@ -16,10 +16,13 @@ function NoteController($scope) {
     var settingsTable = null;
 
     $scope.currentNote = null;
+
+
     $scope.currentFolder = null;
+
     var editor = null;
 
-    $scope.sidebarType = 'notes';
+    $scope.sidebarType = 'folders';
     $scope.activeSidebar = true;
 
     var settings = {
@@ -282,6 +285,7 @@ function NoteController($scope) {
         folder.get('notes').push(noteID)
     };
 
+
     var removeNoteFromFolder = function (folder, noteId) {
         var notes = folder.get('notes');
         var index = notes.toArray().indexOf(noteId);
@@ -346,14 +350,14 @@ function NoteController($scope) {
             name: name,
             created: date,
             modified: date,
-            content: typeof content !== 'undef',
+            content: typeof content !== 'undefined' ? content : '',
             folder: folderId
         };
 
         if (!values.name || typeof values.name !== 'string') { throw "Invalid Note Name" }
         if (!values.folder || typeof values.folder !== 'string') { throw "Invalid Folder ID" }
 
-        var folder = FolderAPI.getFolder(folder);
+        var folder = FolderAPI.get(folderId);
         if (!folder) { throw "Folder does not exist" }
 
         // Create Note
@@ -371,12 +375,13 @@ function NoteController($scope) {
      * @param {string} id - the id of the note to delete
      */
     NoteAPI.delete = function (id) {
-        var note = FolderAPI.get(id);
+        var note = NoteAPI.get(id);
 
         // Remove from folder
         var folderId = note.get('folder');
-        if (folderId != null && folderId.length > 0) {
-            removeNoteFromFolder(FolderAPI.getFolder(id), note);
+        var folder = FolderAPI.get(folderId);
+        if (folder) {
+            FolderAPI.removeNote(folderId, note.getId());
         }
 
         // Delete note
@@ -450,12 +455,14 @@ function NoteController($scope) {
 
         // Split by new line
         var splitByNewLine = content.match(/[^\r\n]+/g);
-        for (var i = 0; i < splitByNewLine.length; i++) {
-            var line = splitByNewLine[i].trim();
+        if (splitByNewLine) {
+            for (var i = 0; i < splitByNewLine.length; i++) {
+                var line = splitByNewLine[i].trim();
 
-            if (line.length > 0) {
-                // TODO put line through markdown processor
-                return line.substring(0, maxLength);
+                if (line.length > 0) {
+                    // TODO put line through markdown processor
+                    return line.substring(0, maxLength);
+                }
             }
         }
         return ''
@@ -498,6 +505,11 @@ function NoteController($scope) {
         return NoteAPI.getShortContent(note.getId());
     };
 
+    $scope.createNote = function () {
+        closeNote();
+        saveNote();
+    };
+
 
     var removeNote = function (note) {
         var id = note.getId();
@@ -508,18 +520,26 @@ function NoteController($scope) {
     };
     $scope.removeNote = removeNote;
 
+
     var saveNote = function () {
         var content = editor.getContent();
 
         if ($scope.currentNote == null) {
-            var note = NoteAPI.create('New Note', 'test', content);
+            var note = NoteAPI.create('New Note', $scope.currentFolder.getId(), content);
             $scope.currentNote = note.getId();
+            $scope.notes.push(note);
         } else {
             NoteAPI.update($scope.currentNote, {content: content});
         }
 
+//        reloadNotes();
+
     };
     $scope.saveNote = saveNote;
+
+    $scope.newNote = function () {
+        NoteAPI.create('New Note', $scope.currentFolder.getId());
+    };
 
 
     //=========================================================================
@@ -657,21 +677,64 @@ function NoteController($scope) {
     //=========================================================================
     // Sidebar
     //=========================================================================
-    $scope.openSidebar = function () {
+
+    /**
+     * Represents actions to take on the sidebar
+     * @constructor
+     */
+    var Sidebar = function () {};
+
+
+    /**
+     * Open the sidebar
+     */
+    Sidebar.open = function () {
         $scope.activeSidebar = true;
     };
+    $scope.openSidebar = Sidebar.open;
 
-    $scope.closeSidebar = function () {
+
+    /**
+     * Close the sidebar
+     */
+    Sidebar.close = function () {
         $scope.activeSidebar = false;
     };
+    $scope.closeSidebar = Sidebar.close;
 
-    $scope.toggleSidebar = function () {
+
+    /**
+     * Toggle the sidebar
+     */
+    Sidebar.toggle = function () {
         $scope.activeSidebar = !$scope.activeSidebar;
     };
+    $scope.toggleSidebar = Sidebar.toggle;
 
-    $scope.setSidebarType = function (type) {
+
+    /**
+     * Set the content type of the sidebar
+     * @param {string} type - the content type of the sidebar
+     */
+    Sidebar.setContentType = function (type) {
         $scope.sidebarType = type;
     };
+    $scope.setSidebarType = Sidebar.setContentType;
+
+
+    /**
+     * Select a folder to be the active folder. Switch to notes.
+     * @param {object} folder - the folder to select
+     */
+    Sidebar.selectFolder = function (folder) {
+        if (!folder) {
+            throw 'Folder does not exist'
+        }
+
+        $scope.currentFolder = folder;
+        Sidebar.setContentType('notes');
+    };
+    $scope.selectFolder = Sidebar.selectFolder;
 
 
     //=========================================================================
@@ -686,7 +749,11 @@ function NoteController($scope) {
                 item.deleteRecord();
             }
         }
+
+        reloadFolders();
+        reloadNotes();
     };
+    $scope.clearData = clearData;
 
 
     //=========================================================================

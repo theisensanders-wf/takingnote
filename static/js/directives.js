@@ -1,7 +1,8 @@
 angular.module('directives', [])
     .directive('fileUploader', function ($fileUpload) {
         return {
-            template: '<div><input type="file" accept=".png"></div>',
+            transclude: true,
+            template: '<div class="btn btn-primary" style="position: relative; overflow: hidden;"><span ng-transclude></span><input type="file" accept=".png" style="position: absolute; top: 0; right: 0; min-width: 100%; min-height: 100%; font-size: 999px; text-align: right; filter: alpha(opacity=0); opacity: 0; background: red; cursor: inherit; display: block;"></div>',
             link: function ($scope, $element, $attrs) {
                 var fileInput = $element.find('input[type="file"]');
                 fileInput.bind('change', function (e) {
