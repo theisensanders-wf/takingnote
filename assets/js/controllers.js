@@ -1,136 +1,33 @@
-
-
 /**
  * Main controller
  * @param {object} $scope - application model
  * @constructor
  */
-function NoteController($scope, NoteAPI) {
+function NoteController($scope, datastore, NoteAPI, SettingAPI) {
     $scope.notes = null;
 
     NoteAPI.deferredQuery().then(function (_notes) {
         $scope.notes = _notes;
     });
 
-    $scope.current = {
-        note: null
-    };
+    SettingAPI.deferredQuery().then(function (_settings) {
+        var lastOpenedNote = NoteAPI.get(SettingAPI.getByName('lastOpenedNote').get('value'));
+        $scope.openNote(lastOpenedNote);
+    });
+
+    $scope.current = {note: null};
+
+    $scope.overlayActive = false;
 
     $scope.sidebarActive = true;
-
-
-    //=========================================================================
-    // Editor
-    //=========================================================================
-
-    /**
-     * Represents the markdown editor
-     * @constructor
-     */
-    var Editor = function () {
-//        settings.darkTheme = SettingAPI.getByName('darkTheme').get('value');
-
-        var options = {
-            container: 'epic-editor',
-            basePath: 'static/css',
-            clientSideStorage: false,
-            theme: {
-                base: '/epiceditor.css',
-                preview: '/preview-dark.css',
-                editor: '/epic-dark.css'
-            },
-            file: {
-                autoSave: 500
-            },
-            focusOnLoad: true,
-            autogrow: {
-                minHeight: $(window).height()
-            }
-        };
-
-
-        this._editor = new EpicEditor(options);
-
-        var initializeListeners = function (editor) {
-            var save = function () {
-                $scope.saveNote();
-                $scope.$apply();
-            };
-
-            editor.on('autosave', save);
-            //        editor.on('save', save);  Breaking for some reason that has to do with $apply
-
-//            $scope.$watch('settings.darkTheme', function (newValue) {
-//                var setting = SettingAPI.getByName('darkTheme');
-//                SettingAPI.changeValue(setting.getId(), newValue);
-//            });
-//
-//            $scope.$watch('settings.fontSize', function (newValue) {
-//                var setting = SettingAPI.getByName('fontSize');
-//                SettingAPI.changeValue(setting.getId(), newValue);
-//            });
-//
-//            $scope.$watch('settings.autoSave', function (newValue) {
-//                var setting = SettingAPI.getByName('autoSave');
-//                SettingAPI.changeValue(setting.getId(), newValue);
-//            });
-        };
-
-
-        /**
-         * Get the content of the editor
-         * @returns {string} - the content of the editor
-         */
-        this.getContent = function () {
-            return this._editor.exportFile();
-        };
-
-
-        /**
-         * Loads content into the editor, replaces existing content
-         * @param {string} content - the content to load
-         */
-        this.loadContent = function (content) {
-            this._editor.importFile('epiceditor', content)
-        };
-
-
-        /**
-         * Clears the content of the editor
-         */
-        this.clearContent = function () {
-            this.loadContent('');
-        };
-
-
-        /**
-         * Append content to the end of the file
-         * @param {string} content - the content to append
-         */
-        this.appendContent = function (content) {
-            content = this.getContent() + content;
-            this.loadContent(content);
-            _editor.save();
-        };
-
-
-//        this._editor.load();
-//        this._editor.focus();
-//        initializeListeners(this._editor);
-        return this;
+    $scope.toggleSidebar = function () {
+        $scope.sidebarActive = !$scope.sidebarActive;
     };
-//    var editor = Editor();
+
 
     //=========================================================================
     // Note Helper Methods
     //=========================================================================
-//    var reloadNotes = function () {
-//        $scope.notes = NoteAPI.query();
-//        if ($scope.current.note != null) {
-//            openNote($scope.current.note);
-//        }
-//    };
-
     $scope.openNote = function (note) {
         $scope.current.note = note;
     };
@@ -141,7 +38,7 @@ function NoteController($scope, NoteAPI) {
 
     $scope.deleteNote = function (note) {
         var id = note.getId();
-        if (id == $scope.current.note) {
+        if (id == $scope.current.note.getId()) {
             $scope.closeNote();
         }
 
@@ -151,22 +48,61 @@ function NoteController($scope, NoteAPI) {
 
     $scope.createNote = function (name, content) {
         var note = NoteAPI.create(name, content);
-        $scope.current.note = note.getId();
         $scope.notes.push(note);
+        $scope.openNote(note);
     };
 
-    $scope.updateNoteContent = function (note, content) {
-        NoteAPI.update({content: content})
+    $scope.isActiveNote = function (note) {
+        if ($scope.current.note != null) {
+            return note.getId() == $scope.current.note.getId();
+        }
+        return false;
     };
+
+//    $scope.getModified = function(note) {
+//        return N
+//    };
+
+    $scope.authenticate = function () {
+        $scope.$emit('authenticate');
+    };
+
+    $scope.$watch('current.note', function (value) {
+        if (value != null) {
+            var name = 'lastOpenedNote';
+            var noteId = value.getId();
+            var setting = SettingAPI.getByName(name);
+            if (!setting) {
+                setting = SettingAPI.create(name, noteId)
+            } else {
+                setting = SettingAPI.changeValue(setting, noteId)
+            }
+        }
+    });
+
+    $scope.$on('unauthenticated', function(event) {
+        $scope.overlayActive = true;
+        $scope.$apply();
+    });
 
     // Listeners
 
     $scope.$on('New Image', function (event, name, url) {
-        editor.appendContent('![](' + url + ')');
+        var note = $scope.current.note;
+        $scope.current.note = null;
+
+        var md_formatted = '![' + name + '](' + url + ')';
+        var content = note.get('content');
+        content += md_formatted;
+        note = note.update({content: content});
+
+        $scope.current.note = note;
+        $scope.$apply();
     });
 
     $scope.$on('New File', function (event, name, url) {
-        editor.appendContent('[' + name + '](' + url + ')');
+        alert('new file');
+//        editor.appendContent('[' + name + '](' + url + ')');
     });
 }
-NoteController.$inject = ['$scope', 'NoteAPI', 'SettingAPI'];
+NoteController.$inject = ['$scope', 'datastore', 'NoteAPI', 'SettingAPI'];

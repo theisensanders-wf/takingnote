@@ -3,21 +3,21 @@ angular.module('directives', [])
     .directive('fileUploader', function (fileUpload) {
         return {
             transclude: true,
-            scope: {
-                'callback': '&'
-            },
-            template: '<div class="btn btn-primary" style="position: relative; overflow: hidden;"><span ng-transclude></span><input type="file" style="position: absolute; top: 0; right: 0; min-width: 100%; min-height: 100%; font-size: 999px; text-align: right; filter: alpha(opacity=0); opacity: 0; background: red; cursor: inherit; display: block;"></div>',
+            template: '<div class="fileUpload" ng-click="propagate">' +
+                '<span ng-transclude></span>' +
+                '<input type="file">' +
+                '</div>',
+            replace: true,
             link: function ($scope, $element, $attrs) {
                 var fileInput = $element.find('input[type="file"]');
+
+                $scope.propagate = function () {
+                    fileInput.click();
+                };
+
                 fileInput.bind('change', function (e) {
                     var file = e.target.files[0];
-
-                    // Use callback if specified, else use fileUpload service
-                    if ($scope.callback) {
-                        $scope.callback({file: file});
-                    } else {
-                        fileUpload.upload(file);
-                    }
+                    fileUpload.upload(file);
                 });
             }
         }
@@ -103,18 +103,30 @@ angular.module('directives', [])
             scope: {
                 note: '='
             },
-            template: '<div class="md" ng-show="note != null"><div class="md-controls"><button class="btn btn-default" ng-click="edit()"><i class="icon-pencil icon-2x"></i></button></div><div ng-hide="editing" ng-dblclick="edit()" ng-bind-html-unsafe="html" class="md-preview"></div><textarea ng-show="editing" ng-model="text" class="md-editor"></textarea></div>',
+            template: '<div class="md" ng-show="note != null">' +
+                '<div class="md-title"><input ng-model="title" ng-show="editingTitle"><h2 ng-hide="editingTitle" ng-click="editTitle()" ng-bind="note.get(\'name\')"></h2></div>' +
+                '<div class="md-controls">' +
+                '<button class="btn btn-default" ng-click="edit()"><i class="icon-pencil icon-2x"></i></button>' +
+                '<button class="btn btn-default" ng-click="goFullscreen()"><i class="icon-fullscreen icon-2x"></i></button>' +
+                '</div>' +
+                '<div ng-hide="editing" ng-dblclick="edit()" ng-bind-html-unsafe="html" class="md-preview"></div>' +
+                '<textarea ng-show="editing" ng-model="text" class="md-editor"></textarea>' +
+                '</div>',
             replace: true,
             link: function ($scope, element, attr) {
                 var converter = new Showdown.converter();
 
                 $scope.editing = false;
+                $scope.editingTitle = false;
+                $scope.fullscreen = false;
 
+                $scope.title = '';
                 $scope.text = '';
                 $scope.html = '';
 
                 var editor = element.find('.md-editor');
                 var previewer = element.find('.md-preview');
+                var titler = element.find('.md-title > input');
 
                 editor.on('blur keyup', function (e) {
                     if ($scope.note != null) {
@@ -131,18 +143,73 @@ angular.module('directives', [])
                     }
                 });
 
+                titler.on('blur keyup', function (e) {
+                    e.stopPropagation();
+                    var input = $(this);
+
+                    function accept() {
+                        if ($scope.title.length < 1) {
+                            reject();
+                            return;
+                        }
+                        $scope.editingTitle = false;
+                        $scope.note.update({name: $scope.title});
+                        $scope.$apply();
+                    }
+
+                    function reject() {
+                        $scope.editingTitle = false;
+                        $scope.title = $scope.note.get('name');
+                        $scope.$apply();
+                    }
+
+                    if ($scope.note != null) {
+                        if (e.type == 'blur') {
+                            accept();
+                        } else if (e.type == 'keyup') {
+                            if (e.keyCode == 13) {
+                                accept();
+                            } else if (e.keyCode == 27) {
+                                reject();
+                            }
+                        }
+                    }
+                });
+
+                $scope.goFullscreen = function () {
+                    alert('Not Implemented Yet');
+//                    if (fullscreen.requestFullScreen) {
+//                        fullscreen.requestFullScreen();
+//                    } else if (fullscreen.mozRequestFullScreen) {
+//                        fullscreen.mozRequestFullScreen();
+//                    } else if (fullscreen.webkitRequestFullScreen) {
+//                        fullscreen.webkitRequestFullScreen();
+//                    }
+                };
+
                 $scope.edit = function () {
-                    $scope.editing = !$scope.editing;
+                    $scope.editing = true;
 
                     // Hack for focusing after textarea is shown
                     setTimeout(function () {
-                      editor.focus();
+                        editor.focus();
+                    }, 100)
+                };
+
+                $scope.editTitle = function () {
+                    $scope.editingTitle = true;
+
+                    // Hack for focusing after input is shown
+                    setTimeout(function () {
+                        titler.focus();
+                        titler.select();
                     }, 100)
                 };
 
                 $scope.$watch('note', function (note) {
                     if (note != null) {
                         $scope.text = note.get('content');
+                        $scope.title = note.get('name');
                     }
                 });
 

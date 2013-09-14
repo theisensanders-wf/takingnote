@@ -1,27 +1,69 @@
 var app = angular.module('services', []);
 
-app.service('datastore', function ($q, $rootScope, dropstoreClient) {
+app.service('datastore', function ($q, $rootScope) {
 
-    var APP_KEY = 'owmans4v3jkpi5x';
-    var client = dropstoreClient.create({key: APP_KEY});
-    $rootScope.client = client._client;
+    var APP_KEY = 'qlmhguu4erp09wy';
+
+    var client = new Dropbox.Client({key: APP_KEY});
     var datastore = $q.defer();
 
-    client.authenticate({interactive: true})
-        .then(function (datastoreManager) {
-            return datastoreManager.openDefaultDatastore();
-        })
-        .then(function (_datastore) {
-            datastore.resolve(_datastore);
-            $rootScope.$broadcast('authenticated');
-        }).then(function () {
-            client.getAccountInfo(function (error, info, obj) {
-                console.log('TEST');
-                console.log(info);
-            })
-        });
+    // Try to finish OAuth authorization.
+    client.authenticate({interactive: true}, function (error) {
+        if (error) {
+            alert('Authentication error: ' + error);
+        }
+    });
 
-    return datastore.promise
+    if (client.isAuthenticated()) {
+        var datastoreManager = client.getDatastoreManager();
+        datastoreManager.openDefaultDatastore(function (error, _datastore) {
+            if (error) {
+                alert('Error opening default datastore: ' + error);
+            }
+
+            $rootScope.$apply(function () {
+                datastore.resolve(_datastore);
+            });
+
+
+            // Now you have a datastore. The next few examples can be included here.
+        });
+        // Client is authenticated. Display UI.
+    } else {
+        setTimeout(function () {
+            $rootScope.$broadcast('unauthenticated');
+        }, 200);
+    }
+
+    $rootScope.$on('authenticate', function () {
+        client.authenticate();
+    });
+
+    $rootScope.client = client;
+    return datastore.promise;
+
+//    var client = dropstoreClient.create({key: APP_KEY});
+//    $rootScope.client = client._client;
+//    var datastore = $q.defer();
+//
+//    debugger;
+//
+//    client.authenticate({interactive: false})
+//        .then(function (datastoreManager) {
+//            alert('test');
+//            return datastoreManager.openDefaultDatastore();
+//        })
+//        .then(function (_datastore) {
+//            datastore.resolve(_datastore);
+//            $rootScope.$broadcast('authenticated');
+//        }).then(function () {
+//            client.getAccountInfo(function (error, info, obj) {
+//                console.log('TEST');
+//                console.log(info);
+//            })
+//        });
+//
+//    return datastore.promise
 });
 
 
@@ -36,15 +78,15 @@ var NoteAPIService = function ($q, $rootScope, datastore) {
     var table;
     var _deferredTable = $q.defer();
 
-    datastore.then(function (datastore) {
-        table = datastore.getTable('notes');
+    datastore.then(function (_datastore) {
+        table = _datastore.getTable('notes');
         _deferredTable.resolve(table);
     });
     var tablePromise = _deferredTable.promise
 
 
-    datastore.then(function (datastore) {
-        table = datastore.getTable('notes');
+    datastore.then(function (_datastore) {
+        table = _datastore.getTable('notes');
         $rootScope.$broadcast('notes');
     });
 
@@ -140,6 +182,7 @@ var NoteAPIService = function ($q, $rootScope, datastore) {
 
         // Update modified date
         props['modified'] = new Date();
+        console.log(props['modified']);
 
         return note.update(props)
     };
@@ -208,8 +251,7 @@ var SettingAPIService = function ($q, $rootScope, datastore) {
 
 
     datastore.then(function (datastore) {
-        table = datastore.getTable('notes');
-        $rootScope.$broadcast('notes');
+        table = datastore.getTable('settings');
     });
 
 
@@ -266,23 +308,24 @@ var SettingAPIService = function ($q, $rootScope, datastore) {
 
     /**
      * Update setting with the given id
-     * @param {string} id - the id of the setting to update
+     * @param {string|object} setting - the setting or id of the setting to update
      * @param {object} props - the properties of the setting to update
      * @returns {object} Updated setting
      */
-    this.update = function (id, props) {
-        var setting = this.get(id);
+    this.update = function (setting, props) {
+        setting = typeof setting == 'string' ? this.get(setting) : setting;
         return setting.update(props);
     };
 
 
     /**
      * Delete the setting with the given id
-     * @param {string} id - the id of the setting to delete
+     * @param {string|object} setting - the setting or id of the setting to delete
      * @returns {object} Deleted setting
      */
-    this.delete = function (id) {
-        return this.get(id).deleteRecord();
+    this.delete = function (setting) {
+        setting = typeof setting == 'string' ? this.get(setting) : setting;
+        return setting.deleteRecord();
     };
 
 
@@ -298,22 +341,23 @@ var SettingAPIService = function ($q, $rootScope, datastore) {
 
     /**
      * Change the value of a function with the given id
-     * @param {string} id - the id of the function to change
+     * @param {string|object} setting - the setting or id of the setting to change
      * @param {string|boolean|number} newValue - the new value of the setting
      * @returns {*|Object|Object|Object}
      */
-    this.changeValue = function (id, newValue) {
-        return this.update({value: newValue});
+    this.changeValue = function (setting, newValue) {
+        setting = typeof setting == 'string' ? this.get(setting) : setting;
+        return this.update(setting, {value: newValue});
     };
 
 
     /**
      * Toggle a given setting. The setting must be a boolean setting
-     * @param {string} id - the id of the setting to toggle
+     * @param {string|object} setting - the setting or id of the setting to toggle
      * @returns {object} - the updated setting
      */
-    this.toggle = function (id) {
-        var setting = this.get(id);
+    this.toggle = function (setting) {
+        setting = typeof setting == 'string' ? this.get(setting) : setting;
         var value = setting.get('value');
 
         if (typeof value !== "boolean") {
@@ -327,16 +371,13 @@ app.service('SettingAPI', SettingAPIService);
 
 
 app.service('fileUpload', function ($rootScope) {
-
     var isImage = function (fileType) {
         return fileType.match('image*') !== null;
     };
 
 
     this.upload = function (file) {
-
         if (file !== undefined) {
-
             var image = isImage(file.type);
             var path = '/' + file.type.split('/')[0] + '/' + file.name;
 
@@ -354,6 +395,8 @@ app.service('fileUpload', function ($rootScope) {
                     } else {
                         $rootScope.$broadcast('New File', file.name, shareUrl.url)
                     }
+
+                    $rootScope.$apply();
                 });
             });
         } else {
@@ -361,4 +404,8 @@ app.service('fileUpload', function ($rootScope) {
         }
     }
 });
+//
+//app.service('noteContent', function () {
+//    this.addContent
+//})
 

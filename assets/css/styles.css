@@ -3,6 +3,10 @@ body, html {
     height: 100%;
 }
 
+body {
+    font-family: 'Lato', sans-serif;
+}
+
 #content {
     width: 100%;
     height: 100%;
@@ -18,8 +22,16 @@ body, html {
     overflow-y: auto;
     background-color: #C63D0F;
 
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+
     /* Start Collapsed */
     width: 0;
+
 }
 
 #navigation.expand {
@@ -37,8 +49,38 @@ body, html {
     width: 85%;
 }
 
+#navigation, #page-wrap {
+    transition: width 0.5s ease;
+}
+
+/*Toolbar*/
+.toolbar {
+    width: 100%;
+    padding: 10px 20px;
+    margin: 0;
+}
+
+.toolbar .left {
+    float: left;
+}
+
+.toolbar .right {
+    float: right;
+}
+
+.toolbar a, .toolbar div {
+    text-decoration: none;
+    color: #C63D0F;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.toolbar a:hover, .toolbar div:hover {
+    color: #a7390f;
+}
 
 /*Sidebar*/
+
 #navigation .list-group {
 
 }
@@ -49,8 +91,11 @@ body, html {
     height: 60px;
     /*border: 0;*/
     cursor: pointer;
-    border: 1px solid #a7390f;
-    margin: 10px 10px;
+    /*border: 1px solid #a7390f;*/
+    border: 0;
+    margin: 10px 0;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
 #navigation .list-group .list-group-item.file:hover {
@@ -58,20 +103,37 @@ body, html {
 }
 
 #navigation .list-group .list-group-item.file h4 {
+    font-family: 'Lato', sans-serif;
     color: #FDF3E7;
 }
 
+#navigation .list-group .list-group-item.file.new-note {
+    padding: 0;
+    height: auto;
+    text-align: center;
+    background-color: #3B3738;
+}
+
+#navigation .list-group .list-group-item.file.active {
+    background-color: #a7390f;
+}
+
 /*Markdown*/
+#note-container {
+    height: 100%;
+    margin: 0;
+}
+
 .md {
     position: relative;
-    top: 5%;
-    margin: 0 30px;
-    padding: 50px;
+    margin: 10px 30px;
     background-color: #ffffff;
     height: 90%;
     border: 1px solid #3B3738;
     overflow-y: auto;
+    overflow-x: hidden;
     border-radius: 5px;
+    padding: 20px 50px 40px 50px;
 }
 
 .md .md-controls {
@@ -86,9 +148,79 @@ body, html {
     display: block;
 }
 
+.md .md-title {
+    max-height: 15%;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.md .md-title h2 {
+    font-family: 'Lato', sans-serif;
+    color: #C63D0F;
+}
+
 .md-editor {
-    height: 100%;
+    height: 85%;
     width: 100%;
     resize: none;
     overflow: auto;
+}
+
+/*Overlay*/
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: #C63D0F;
+    z-index: 10000;
+}
+
+.note-message {
+    position: relative;
+    top: 30%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.note-message a {
+    font-family: 'Lato', sans-serif;
+    text-decoration: none;
+    color: #C63D0F;
+}
+
+.file-input {
+    /*position: absolute;*/
+    /*top: 0;*/
+    /*right: 0;*/
+    /*min-width: 100%;*/
+    /*min-height: 100%;*/
+    /*font-size: 999px;*/
+    /*text-align: right;*/
+    /*filter: alpha(opacity=0);*/
+    /*opacity: 0;*/
+    /*background: red;*/
+    /*cursor: inherit;*/
+    /*display: block;*/
+}
+
+.fileUpload {
+    display: inline-block;
+	position: relative;
+	overflow: hidden;
+}
+
+.fileUpload input {
+    /*display: none;*/
+    /*width: 0;*/
+	position: absolute;
+	top: 0;
+	right: 0;
+	margin: 0;
+	padding: 0;
+	font-size: 20px;
+	cursor: pointer;
+	opacity: 0;
+	filter: alpha(opacity=0);
 }

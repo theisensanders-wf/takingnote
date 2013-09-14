@@ -13,37 +13,39 @@ css:
 ---
 <div id="content" ng-controller="NoteController">
 
+    <div id="overlay" ng-show="overlayActive">
+        <a ng-click="authenticate()">Auth</a>
+    </div>
+
     <nav id="navigation" ng-class="{expand: sidebarActive}">
         <div class="list-group">
-            <a ng-click="createNote('New Note')">Create Note</a>
-            <a class="list-group-item file" ng-repeat="note in notes" ng-click="openNote(note)">
-                <h4 ng-bind="note.get('name')"></h4>
+            <a ng-click="createNote('New Note')" class="list-group-item file new-note"><h4>Create a
+                new note</h4></a>
+            <a ng-repeat="note in notes" ng-click="openNote(note)" ng-dblclick="toggleSidebar();" ng-class="{active: isActiveNote(note) }" class="list-group-item file">
+                <div class="note-name"><h4 ng-bind="note.get('name')"></h4></div>
+                <!--<div class="note-actions">-->
+                <!--<button class="btn delete-note">&times;</button>-->
+                <!--</div>-->
             </a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
-            <a class="list-group-item file"></a>
         </div>
     </nav>
 
 
     <div id="page-wrap" ng-class="{compress: sidebarActive}">
-        <markdown note="current.note"></markdown>
+        <div class="row toolbar">
+            <div class="left">
+                <a id="sidebar-toggle" ng-click="toggleSidebar()"><i class="icon-reorder icon-2x"></i></a>
+            </div>
+            <div class="right">
+                <a ng-click="deleteNote(current.note)"><i class="icon-trash icon-2x"></i></a>
+                <div file-uploader><i class="icon-picture icon-2x"></i></div>
+                <a><i class="icon-gear icon-2x"></i></a>
+            </div>
+        </div>
+        <div id="note-container" class="row">
+            <markdown note="current.note"></markdown>
+            <div class="note-message" ng-show="current.note == null"><a><h2>Create or Open a Note!</h2></a></div>
+        </div>
     </div>
 
 </div>
