@@ -1,5 +1,6 @@
 author: Theisen Sanders
 description: The Markdown Note Taker
 app_name: takingnote
+version: Beta v0.1
 angular: false  # Will need to be turned on page by page
 exclude: ["vendor"]
