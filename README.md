@@ -1,6 +1,11 @@
-TakingNote
+[TakingNote](https://takingnote.herokuapp.com/landing.html)
 ========
 
-Markdown Note Taker
+**Markdown Note Taker**
 
-Alpha v0.0.1
+*Beta v0.1*
+
+Screenshot(s):
+---
+
+![](http://theisensanders.com/assets/img/projects/note_app.png)
