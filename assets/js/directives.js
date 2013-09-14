@@ -49,7 +49,7 @@ angular.module('directives', [])
             }
         }
     })
-    .directive('editable', function () {
+    .directive('editable',function () {
         return {
             scope: {
                 value: '=',
@@ -97,4 +97,60 @@ angular.module('directives', [])
                 })
             }
         };
+    }).directive('markdown', function () {
+        return {
+            restrict: 'E',
+            scope: {
+                note: '='
+            },
+            template: '<div class="md" ng-show="note != null"><div class="md-controls"><button class="btn btn-default" ng-click="edit()"><i class="icon-pencil icon-2x"></i></button></div><div ng-hide="editing" ng-dblclick="edit()" ng-bind-html-unsafe="html" class="md-preview"></div><textarea ng-show="editing" ng-model="text" class="md-editor"></textarea></div>',
+            replace: true,
+            link: function ($scope, element, attr) {
+                var converter = new Showdown.converter();
+
+                $scope.editing = false;
+
+                $scope.text = '';
+                $scope.html = '';
+
+                var editor = element.find('.md-editor');
+                var previewer = element.find('.md-preview');
+
+                editor.on('blur keyup', function (e) {
+                    if ($scope.note != null) {
+                        if (e.type == 'blur' || (e.type == 'keyup' && e.keyCode == 27)) {
+                            e.preventDefault();
+
+                            var content = $(this).val();
+                            $scope.editing = false;
+                            $scope.text = content;
+                            $scope.note.update({content: content});
+
+                            $scope.$apply();
+                        }
+                    }
+                });
+
+                $scope.edit = function () {
+                    $scope.editing = !$scope.editing;
+
+                    // Hack for focusing after textarea is shown
+                    setTimeout(function () {
+                      editor.focus();
+                    }, 100)
+                };
+
+                $scope.$watch('note', function (note) {
+                    if (note != null) {
+                        $scope.text = note.get('content');
+                    }
+                });
+
+                $scope.$watch('text', function (value) {
+                    if (value != null || value != '') {
+                        $scope.html = converter.makeHtml(value == undefined ? '' : value);
+                    }
+                })
+            }
+        }
     });

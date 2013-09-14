@@ -1,0 +1,4 @@
+author: Theisen Sanders
+description: The Markdown Note Taker
+app_name: takingnote
+angular: false  # Will need to be turned on page by page

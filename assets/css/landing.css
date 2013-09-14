@@ -1,0 +1,59 @@
+html, body {
+    height: 100%;
+    font-family: 'Lato', sans-serif;
+}
+
+body {
+    background-color: #C63D0F;
+}
+
+.landing {
+    position: absolute;
+    top: 15%;
+    width: 100%;
+    text-align: center;
+    background-color: #FDF3E7;
+    padding: 100px;
+}
+
+.landing h1 {
+    color: #3B3738;
+    font-weight: 800;
+    font-size: 100px;
+    font-family: 'Lato', sans-serif;
+    /*text-shadow: 2px 2px #333333;*/
+}
+
+.landing h3 {
+    color: #3B3738;
+    font-family: 'Lato', sans-serif;
+    letter-spacing: 5px;
+    font-weight: 400;
+}
+
+.landing .btn {
+    margin-top: 20px;
+    padding: 20px 100px;
+    border-radius: 0;
+    background-color: #3B3738;
+    font-size: 20px;
+    color: #FDF3E7;
+}
+
+.references {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    text-align: center;
+}
+
+.references h5 {
+    font-family: 'Lato', sans-serif;
+    color: #ffffff;
+    display: inline;
+    font-weight: 600;
+}
+
+.references img {
+    height: 80px;
+}

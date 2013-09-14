@@ -14,165 +14,15 @@ app.service('datastore', function ($q, $rootScope, dropstoreClient) {
         .then(function (_datastore) {
             datastore.resolve(_datastore);
             $rootScope.$broadcast('authenticated');
+        }).then(function () {
+            client.getAccountInfo(function (error, info, obj) {
+                console.log('TEST');
+                console.log(info);
+            })
         });
 
     return datastore.promise
 });
-
-
-/**
- * API for getting, creating, updating and various interactions with Folders in the datastore
- * @param $q - Angular Promise Service
- * @param $rootScope - Root Scope service
- * @param datastore - Datastore promise service
- * @constructor
- */
-var FolderAPIService = function ($q, $rootScope, datastore) {
-    var table;
-    var _deferredTable = $q.defer();
-
-    datastore.then(function (datastore) {
-        table = datastore.getTable('folders');
-        _deferredTable.resolve(table);
-    });
-    var tablePromise = _deferredTable.promise
-
-
-    /**
-     * Get the folders in the datastore
-     * @param {object} [fieldValues] - properties of folders, if undefined will get all folders
-     * @returns {array} - folders matching given properties
-     */
-    this.query = function (fieldValues) {
-        fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {};
-        return table.query(fieldValues);
-    };
-
-
-    /**
-     * Get the folders in the datastore wrapped in an angular deferred promise
-     * @param {object} [fieldValues] - properties of folders, if undefined will get all folders
-     * @returns {function} - promise
-     */
-    this.deferredQuery = function (fieldValues) {
-        fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {};
-
-        var deferredQuery = $q.defer();
-        tablePromise.then(function (table) {
-            deferredQuery.resolve(table.query(fieldValues));
-        });
-        return deferredQuery.promise;
-    };
-
-
-    /**
-     * Get a folder with the specified id
-     * @param {string} id - the id of the folder to get
-     * @returns {object} Folder with the given id
-     */
-    this.get = function (id) {
-        return table.get(id);
-    };
-
-
-    /**
-     * Create a new folder
-     * @param {string} name - the name of the folder
-     * @param {object} [fieldValues] - other properties of the folder
-     * @returns {object} Created folder
-     */
-    this.create = function (name, fieldValues) {
-        var date = new Date();
-        name = typeof name !== 'undefined' ? name : 'New Folder';
-        fieldValues = typeof fieldValues !== 'undefined' ? fieldValues : {
-            created: date,
-            modified: date,
-            notes: [],
-            name: name
-        };
-
-        // Create and return folder
-        return table.insert(fieldValues);
-    };
-
-
-    /**
-     * Delete folder with the given id
-     * @param {string|object} folder - the folder or key of folder to delete
-     * @param {boolean} [include_files=false] - delete the files contained in the folder
-     * @returns {object} Deleted folder
-     */
-    this.delete = function (folder, include_files) {
-        folder = typeof folder == 'string' ? this.get(folder) : folder;
-        include_files = typeof include_files !== 'undefined' ? include_files : false;
-
-        var notes = this.query({folder: folder.getId()});
-        for (var i = 0; i < notes.length; i++) {
-            var note = notes[i];
-            if (include_files) {
-                // If include_files, delete the notes in the folder
-                note.deleteRecord();
-            } else {
-                note.set('folder', '')
-            }
-        }
-
-        // Delete folder
-        folder.deleteRecord();
-        return folder;
-    };
-
-
-    /**
-     * Update a folder with the given properties
-     * @param {string|object} folder - the folder or key of folder to update
-     * @param {object} props - the properties to add/change on the folder
-     * @returns {object} Updated folder
-     */
-    this.update = function (folder, props) {
-        folder = typeof folder == 'string' ? this.get(folder) : folder;
-
-        props = typeof props !== 'undefined' ? props : {};
-        props['modified'] = new Date();
-
-        return folder.update(props)
-    };
-
-
-    /**
-     * Rename the folder with the given id
-     * @param {string|object} folder - the folder or key of folder to rename
-     * @param {string} newName - the new name of the folder
-     */
-    this.rename = function (folder, newName) {
-        this.update(folder, {name: newName});
-    };
-
-
-    /**
-     * Add a note to the folder. This will not update the note.
-     * @param {string|object} folder - the folder or key of folder to add to
-     * @param {string} noteId - the id of the note to add
-     */
-    this.addNote = function (folder, noteId) {
-        folder = typeof folder == 'string' ? this.get(folder) : folder;
-        folder.get('notes').push(noteId);
-    };
-
-
-    /**
-     * Removes a note from the folder. This will not update the note.
-     * @param {string|object} folder - the folder or key of folder to remove the note from
-     * @param {string} noteId - the id of the note to remove
-     */
-    this.removeNote = function (folder, noteId) {
-        folder = typeof folder == 'string' ? this.get(folder) : folder;
-        var notes = folder.get('notes');
-        var index = notes.toArray().indexOf(noteId);
-        notes.splice(index, 1);
-    };
-};
-app.service('FolderAPI', FolderAPIService);
 
 
 /**
@@ -182,7 +32,7 @@ app.service('FolderAPI', FolderAPIService);
  * @param datastore - Datastore promise service
  * @constructor
  */
-var NoteAPIService = function ($q, $rootScope, datastore, FolderAPI) {
+var NoteAPIService = function ($q, $rootScope, datastore) {
     var table;
     var _deferredTable = $q.defer();
 
@@ -239,11 +89,10 @@ var NoteAPIService = function ($q, $rootScope, datastore, FolderAPI) {
     /**
      * Create a new note
      * @param {string} name - the name of the note
-     * @param {string} folderId - the id of the folder it belongs to
      * @param {string} content - the content of the note
      * @returns {object} Created Note
      */
-    this.create = function (name, folderId, content) {
+    this.create = function (name, content) {
         var date = new Date();
         content = typeof content !== 'undefined' ? content : '';
 
@@ -252,28 +101,15 @@ var NoteAPIService = function ($q, $rootScope, datastore, FolderAPI) {
             created: date,
             modified: date,
             content: typeof content !== 'undefined' ? content : '',
-            folder: folderId
+            tags: []
         };
 
         if (!values.name || typeof values.name !== 'string') {
             throw "Invalid Note Name"
         }
-        if (!values.folder || typeof values.folder !== 'string') {
-            throw "Invalid Folder ID"
-        }
-
-        var folder = FolderAPI.get(folderId);
-        if (!folder) {
-            throw "Folder does not exist"
-        }
 
         // Create Note
-        var note = table.insert(values);
-
-        // Add note to folder
-        folder.get('notes').push(note.getId());
-
-        return note;
+        return table.insert(values);
     };
 
 
@@ -283,12 +119,6 @@ var NoteAPIService = function ($q, $rootScope, datastore, FolderAPI) {
      */
     this.delete = function (note) {
         note = typeof note == 'string' ? this.get(note) : note;
-
-        // Remove from folder
-        var folder = this.get(note.get('folder'));
-        if (folder) {
-            this.removeNote(folder.getId(), note.getId());
-        }
 
         // Delete note
         note.deleteRecord();
@@ -310,26 +140,6 @@ var NoteAPIService = function ($q, $rootScope, datastore, FolderAPI) {
 
         // Update modified date
         props['modified'] = new Date();
-
-        // Update folder if needed
-        newFolderId = props['folder'];
-        if (newFolderId) {
-            var newFolderId = props['folder'];
-            var currentFolderId = note.get('folder');
-
-            // Make sure that folder is actually changing
-            if (newFolderId != currentFolderId) {
-                // Remove from current folder
-                var currentFolder = this.get(props['folder']);
-                var notes = currentFolder.get('notes');
-                var index = notes.toArray().indexOf(note.getId());
-                notes.splice(index, 1);
-
-                // Add to new folder
-                var newFolder = this.get(newFolderId);
-                newFolder.get('notes').push(note.getId());
-            }
-        }
 
         return note.update(props)
     };

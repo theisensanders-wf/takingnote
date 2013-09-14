@@ -1,15 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Markdown Note Taker">
-    <meta name="author" content="Theisen Sanders">
+---
+layout: default
+title: Taking Note
 
-    <title>TakingNote</title>
-</head>
-<body>
-<h1>Coming Soon</h1>
+bootstrap: true
+angular: true
+epic_editor: true
+showdown: true
+font_awesome: true
 
-</body>
-</html>
+css:
+- styles.css
+---
+<div id="content" ng-controller="NoteController">
+
+    <nav id="navigation" ng-class="{expand: sidebarActive}">
+        <div class="list-group">
+            <a ng-click="createNote('New Note')">Create Note</a>
+            <a class="list-group-item file" ng-repeat="note in notes" ng-click="openNote(note)">
+                <h4 ng-bind="note.get('name')"></h4>
+            </a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+            <a class="list-group-item file"></a>
+        </div>
+    </nav>
+
+
+    <div id="page-wrap" ng-class="{compress: sidebarActive}">
+        <markdown note="current.note"></markdown>
+    </div>
+
+</div>
