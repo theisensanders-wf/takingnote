@@ -17,7 +17,7 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
 
     $scope.current = {note: null};
 
-    $scope.overlayActive = false;
+    $scope.overlayActive = true;
 
     $scope.sidebarActive = true;
     $scope.toggleSidebar = function () {
@@ -82,6 +82,11 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
 
     $scope.$on('unauthenticated', function(event) {
         $scope.overlayActive = true;
+        $scope.$apply();
+    });
+
+    $scope.$on('authenticated', function(event) {
+        $scope.overlayActive = false;
         $scope.$apply();
     });
 

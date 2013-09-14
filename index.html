@@ -14,7 +14,11 @@ css:
 <div id="content" ng-controller="NoteController">
 
     <div id="overlay" ng-show="overlayActive">
-        <a ng-click="authenticate()">Auth</a>
+        <!--<a ng-click="authenticate()">Auth</a>-->
+        <div class="message">
+            <h1>Logging into Dropbox</h1>
+            <i class="icon-spinner icon-spin icon-4x"></i>
+        </div>
     </div>
 
     <nav id="navigation" ng-class="{expand: sidebarActive}">
@@ -38,13 +42,15 @@ css:
             </div>
             <div class="right">
                 <a ng-click="deleteNote(current.note)"><i class="icon-trash icon-2x"></i></a>
+
                 <div file-uploader><i class="icon-picture icon-2x"></i></div>
                 <a><i class="icon-gear icon-2x"></i></a>
             </div>
         </div>
         <div id="note-container" class="row">
             <markdown note="current.note"></markdown>
-            <div class="note-message" ng-show="current.note == null"><a><h2>Create or Open a Note!</h2></a></div>
+            <div class="note-message" ng-show="current.note == null"><a><h2>Create or Open a
+                Note!</h2></a></div>
         </div>
     </div>
 

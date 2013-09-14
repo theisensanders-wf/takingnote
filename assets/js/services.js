@@ -23,6 +23,10 @@ app.service('datastore', function ($q, $rootScope) {
 
             $rootScope.$apply(function () {
                 datastore.resolve(_datastore);
+
+                setTimeout(function () {
+                    $rootScope.$broadcast('authenticated');
+                }, 200);
             });
 
 
