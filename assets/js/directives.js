@@ -3,19 +3,16 @@ angular.module('directives', [])
     .directive('fileUploader', function (fileUpload) {
         return {
             transclude: true,
-            template: '<div class="fileUpload" ng-click="propagate">' +
+            template: '<div class="fileUpload">' +
                 '<span ng-transclude></span>' +
-                '<input type="file">' +
+                '<input type="file" ng-disabled="current.note == null">' +
                 '</div>',
             replace: true,
             link: function ($scope, $element, $attrs) {
                 var fileInput = $element.find('input[type="file"]');
 
-                $scope.propagate = function () {
-                    fileInput.click();
-                };
-
                 fileInput.bind('change', function (e) {
+                    fileUpload.startUpload();
                     var file = e.target.files[0];
                     fileUpload.upload(file);
                 });
@@ -97,17 +94,18 @@ angular.module('directives', [])
                 })
             }
         };
-    }).directive('markdown', function () {
+    }).directive('markdown',function () {
         return {
             restrict: 'E',
             scope: {
                 note: '='
             },
-            template: '<div class="md" ng-show="note != null">' +
+            template: '<div class="md" ng-class="{loading: loading}" ng-show="note != null">' +
+                '<div ng-show="loading" class="md-load"><i class="icon-spinner icon-4x icon-spin"></i></div>' +
                 '<div class="md-title"><input ng-model="title" ng-show="editingTitle"><h2 ng-hide="editingTitle" ng-click="editTitle()" ng-bind="note.get(\'name\')"></h2></div>' +
                 '<div class="md-controls">' +
-                '<button class="btn btn-default" ng-click="edit()"><i class="icon-pencil icon-2x"></i></button>' +
-                '<button class="btn btn-default" ng-click="goFullscreen()"><i class="icon-fullscreen icon-2x"></i></button>' +
+                '<a ng-click="edit()"><i class="icon-pencil icon-2x"></i></a>' +
+                '<a ng-click="goFullscreen()"><i class="icon-fullscreen icon-2x"></i></a>' +
                 '</div>' +
                 '<div ng-hide="editing" ng-dblclick="edit()" ng-bind-html-unsafe="html" class="md-preview"></div>' +
                 '<textarea ng-show="editing" ng-model="text" class="md-editor"></textarea>' +
@@ -119,10 +117,15 @@ angular.module('directives', [])
                 $scope.editing = false;
                 $scope.editingTitle = false;
                 $scope.fullscreen = false;
+                $scope.loading = false;
 
                 $scope.title = '';
                 $scope.text = '';
                 $scope.html = '';
+
+                function save() {
+                    $scope.note.update({content: $scope.text});
+                }
 
                 var editor = element.find('.md-editor');
                 var previewer = element.find('.md-preview');
@@ -177,7 +180,7 @@ angular.module('directives', [])
                 });
 
                 $scope.goFullscreen = function () {
-                    alert('Not Implemented Yet');
+                    alert('Full screen support coming soon!');
 //                    if (fullscreen.requestFullScreen) {
 //                        fullscreen.requestFullScreen();
 //                    } else if (fullscreen.mozRequestFullScreen) {
@@ -188,12 +191,14 @@ angular.module('directives', [])
                 };
 
                 $scope.edit = function () {
-                    $scope.editing = true;
+                    if (!$scope.loading) {
+                        $scope.editing = true;
 
-                    // Hack for focusing after textarea is shown
-                    setTimeout(function () {
-                        editor.focus();
-                    }, 100)
+                        // Hack for focusing after textarea is shown
+                        setTimeout(function () {
+                            editor.focus();
+                        }, 100)
+                    }
                 };
 
                 $scope.editTitle = function () {
@@ -217,7 +222,44 @@ angular.module('directives', [])
                     if (value != null || value != '') {
                         $scope.html = converter.makeHtml(value == undefined ? '' : value);
                     }
-                })
+                });
+
+                $scope.$watch('loading', function (value) {
+                    if (value) {
+                        $scope.editing = false;
+                    }
+                });
+
+                $scope.$on('start.file.upload', function (event) {
+                    $scope.loading = true;
+                    $scope.$apply();
+                });
+
+                $scope.$on('finish.file.upload', function (event, name, url, image) {
+                    image = typeof image !== 'undefined' ? image : false;
+                    var md_formatted = image ? '!' : '';
+                    md_formatted = md_formatted.concat('[' + name + '](' + url + ')');
+                    $scope.text += md_formatted;
+                    $scope.loading = false;
+                    $scope.$apply();
+                    save();
+                });
+            }
+        }
+    }).directive('popover', function ($http, $compile) {
+        return {
+            link: function ($scope, element, attr) {
+                $http.get('assets/' + attr.popover).then(function (template) {
+                    var data = $compile(template.data)($scope);
+
+                    var popover = element.popover({
+                        html: true,
+                        placement: 'auto',
+                        trigger: 'click',
+                        title: 'Settings',
+                        content: data
+                    });
+                });
             }
         }
     });

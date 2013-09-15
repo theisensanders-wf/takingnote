@@ -37,13 +37,15 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
     };
 
     $scope.deleteNote = function (note) {
-        var id = note.getId();
-        if (id == $scope.current.note.getId()) {
-            $scope.closeNote();
-        }
+        if ($scope.current.note != null && confirm('Are you sure you want to delete this note?')) {
+            var id = note.getId();
+            if (id == $scope.current.note.getId()) {
+                $scope.closeNote();
+            }
 
-        $scope.notes.splice($scope.notes.indexOf(note), 1);
-        NoteAPI.delete(note);
+            $scope.notes.splice($scope.notes.indexOf(note), 1);
+            NoteAPI.delete(note);
+        }
     };
 
     $scope.createNote = function (name, content) {
@@ -67,6 +69,23 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
         $scope.$emit('authenticate');
     };
 
+    $scope.resetAll = function () {
+        if (confirm('Are you sure you want to erase all your data?')) {
+            $scope.current.note = null;
+            $scope.notes = [];
+
+            var settings = SettingAPI.query();
+            var notes = NoteAPI.query();
+
+            var to_delete = [].concat(settings).concat(notes);
+
+            for (var i = 0; i < to_delete.length; i++) {
+                var record = to_delete[i];
+                record.deleteRecord();
+            }
+        }
+    };
+
     $scope.$watch('current.note', function (value) {
         if (value != null) {
             var name = 'lastOpenedNote';
@@ -80,34 +99,16 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
         }
     });
 
-    $scope.$on('unauthenticated', function(event) {
+    $scope.$on('unauthenticated', function (event) {
         $scope.overlayActive = true;
         $scope.$apply();
     });
 
-    $scope.$on('authenticated', function(event) {
+    $scope.$on('authenticated', function (event) {
         $scope.overlayActive = false;
         $scope.$apply();
     });
 
     // Listeners
-
-    $scope.$on('New Image', function (event, name, url) {
-        var note = $scope.current.note;
-        $scope.current.note = null;
-
-        var md_formatted = '![' + name + '](' + url + ')';
-        var content = note.get('content');
-        content += md_formatted;
-        note = note.update({content: content});
-
-        $scope.current.note = note;
-        $scope.$apply();
-    });
-
-    $scope.$on('New File', function (event, name, url) {
-        alert('new file');
-//        editor.appendContent('[' + name + '](' + url + ')');
-    });
 }
 NoteController.$inject = ['$scope', 'datastore', 'NoteAPI', 'SettingAPI'];

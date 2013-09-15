@@ -4,3 +4,4 @@ app_name: takingnote
 version: Beta v0.1
 angular: false  # Will need to be turned on page by page
 exclude: ["vendor"]
+google_analytics: UA-44002968-1

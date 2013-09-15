@@ -379,8 +379,13 @@ app.service('fileUpload', function ($rootScope) {
         return fileType.match('image*') !== null;
     };
 
+    this.startUpload = function () {
+        $rootScope.$broadcast('start.file.upload');
+    };
+
 
     this.upload = function (file) {
+
         if (file !== undefined) {
             var image = isImage(file.type);
             var path = '/' + file.type.split('/')[0] + '/' + file.name;
@@ -393,13 +398,7 @@ app.service('fileUpload', function ($rootScope) {
             var result = $rootScope.client.writeFile(path, file, function (error, stat) {
                 // Get url
                 $rootScope.client.makeUrl(path, {download: true}, function (error, shareUrl) {
-
-                    if (image) {
-                        $rootScope.$broadcast('New Image', file.name, shareUrl.url);
-                    } else {
-                        $rootScope.$broadcast('New File', file.name, shareUrl.url)
-                    }
-
+                    $rootScope.$broadcast('finish.file.upload', file.name, shareUrl.url, image);
                     $rootScope.$apply();
                 });
             });

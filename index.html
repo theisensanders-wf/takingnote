@@ -41,10 +41,10 @@ css:
                 <a id="sidebar-toggle" ng-click="toggleSidebar()"><i class="icon-reorder icon-2x"></i></a>
             </div>
             <div class="right">
-                <a ng-click="deleteNote(current.note)"><i class="icon-trash icon-2x"></i></a>
+                <a ng-class="{disabled: current.note == null}" ng-click="deleteNote(current.note)"><i class="icon-trash icon-2x"></i></a>
 
-                <div file-uploader><i class="icon-picture icon-2x"></i></div>
-                <a><i class="icon-gear icon-2x"></i></a>
+                <div ng-class="{disabled: current.note == null}" file-uploader><i class="icon-picture icon-2x"></i></div>
+                <a popover="partials/settings-popover.html"><i class="icon-gear icon-2x"></i></a>
             </div>
         </div>
         <div id="note-container" class="row">

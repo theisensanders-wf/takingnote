@@ -79,6 +79,11 @@ body {
     color: #a7390f;
 }
 
+.toolbar a.disabled, .toolbar div.disabled {
+    cursor: default;
+    opacity: .4;
+}
+
 /*Sidebar*/
 
 #navigation .list-group {
@@ -144,14 +149,39 @@ body {
     padding: 10px;
 }
 
+.md.loading {
+    background-color: rgba(59, 55, 56, 0.1);
+}
+
 .md:hover .md-controls {
     display: block;
+}
+
+.md .md-controls a {
+    text-decoration: none;
+    margin: 5px 5px;
+    color: #3B3738;
+    opacity: 0.7;
+    cursor: pointer;
+}
+
+.md .md-controls a:hover {
+    opacity: 1;
+}
+
+.md .md-load {
+    position: relative;
+    top: 30%;
+    width: 100%;
+    text-align: center;
 }
 
 .md .md-title {
     max-height: 15%;
     text-align: center;
     margin-bottom: 20px;
+    white-space: nowrap;
+    overflow-x: hidden;
 }
 
 .md .md-title h2 {
@@ -238,7 +268,6 @@ body {
     margin: 0;
     padding: 0;
     font-size: 20px;
-    cursor: pointer;
     opacity: 0;
     filter: alpha(opacity=0);
 }
@@ -250,4 +279,12 @@ body {
     right: 0;
     text-align: center;
     color: #3B3738;
+}
+
+.popover.bottom {
+    margin-left: -57px;
+}
+
+.popover.bottom .arrow {
+    left: 85%;
 }
