@@ -11,8 +11,11 @@ function NoteController($scope, datastore, NoteAPI, SettingAPI) {
     });
 
     SettingAPI.deferredQuery().then(function (_settings) {
-        var lastOpenedNote = NoteAPI.get(SettingAPI.getByName('lastOpenedNote').get('value'));
-        $scope.openNote(lastOpenedNote);
+        var setting = SettingAPI.getByName('lastOpenedNote');
+        if (setting != null) {
+            var lastOpenedNote = NoteAPI.get(setting.get('value'));
+            $scope.openNote(lastOpenedNote);
+        }
     });
 
     $scope.current = {note: null};
