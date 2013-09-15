@@ -388,11 +388,13 @@ app.service('fileUpload', function ($rootScope) {
 
         if (file !== undefined) {
             var image = isImage(file.type);
-            var path = '/' + file.type.split('/')[0] + '/' + file.name;
+            var path = '';
 
             if (isImage(file.type)) {
                 image = true;
                 path = '/image/' + file.name;
+            } else {
+                path = '/files/' + file.name;
             }
 
             var result = $rootScope.client.writeFile(path, file, function (error, stat) {
