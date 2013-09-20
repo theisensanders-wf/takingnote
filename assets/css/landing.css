@@ -1,6 +1,8 @@
 html, body {
     height: 100%;
+    width: 100%;
     font-family: 'Lato', sans-serif;
+    overflow: hidden;
 }
 
 body {
@@ -13,7 +15,7 @@ body {
     width: 100%;
     text-align: center;
     background-color: #FDF3E7;
-    padding: 100px;
+    padding: 75px 0;
 }
 
 .landing h1 {
@@ -21,6 +23,7 @@ body {
     font-weight: 800;
     font-size: 100px;
     font-family: 'Lato', sans-serif;
+    white-space: nowrap;
     /*text-shadow: 2px 2px #333333;*/
 }
 
@@ -29,6 +32,7 @@ body {
     font-family: 'Lato', sans-serif;
     letter-spacing: 5px;
     font-weight: 400;
+    white-space: nowrap;
 }
 
 .landing .btn {
@@ -56,4 +60,29 @@ body {
 
 .references img {
     height: 80px;
+}
+
+@media screen and (min-width: 768px) and (max-width: 979px) {
+  /* line 99, ../_sass/blog.sass */
+  .landing h1 {
+    font-size: 70px;
+  }
+}
+@media (max-width: 767px) {
+  /* line 105, ../_sass/blog.sass */
+  .landing h1 {
+    font-size: 60px;
+  }
+}
+@media screen and (min-width: 481px) and (max-width: 649px) {
+  /* line 109, ../_sass/blog.sass */
+  .landing h1 {
+    font-size: 50px;
+  }
+}
+@media screen and (max-width: 480px) {
+  /* line 113, ../_sass/blog.sass */
+  .landing h1 {
+    font-size: 50px;
+  }
 }
