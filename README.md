@@ -1,11 +1,12 @@
-[TakingNote](https://takingnote.herokuapp.com/landing.html)
-========
+**Dropbox [deprecated their datastore api](https://blogs.dropbox.com/developers/2015/04/deprecating-the-sync-and-datastore-apis/) so as of April 29th, 2016 the app will no longer function.**
 
-**Markdown Note Taker**
+# TakingNote
 
-*Beta v0.1*
+> Markdown Note Taking App
 
-Screenshot(s):
----
-
-![](http://theisensanders.com/assets/img/projects/note_app.png)
+Technologies:
+- AngularJs
+- Jekyll
+- Dropbox Datastore API
+- Showdown - Markdown to HTML
+- Bootstrap
